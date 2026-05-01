@@ -27,7 +27,7 @@ class ExcelExportService {
     final path = "${directory.path}/report.xlsx";
 
     final fileBytes = excel.save();
-    final file = File(path)
+    File(path)
       ..createSync(recursive: true)
       ..writeAsBytesSync(fileBytes!);
   }

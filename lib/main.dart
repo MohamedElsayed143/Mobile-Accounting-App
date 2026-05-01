@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_cubit.dart';
@@ -8,9 +9,22 @@ import 'package:mobile_acc/features/accounting/presentation/widgets/summary_char
 import 'package:mobile_acc/features/accounting/presentation/pages/login_page.dart';
 import 'package:mobile_acc/features/accounting/presentation/widgets/invoice_dialog.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'dart:io' show Platform;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (kIsWeb) {
+    // تهيئة قاعدة البيانات للويب بدون الحاجة لملفات خارجية (Web Worker)
+    databaseFactory = createDatabaseFactoryFfiWeb();
+  } else if (Platform.isWindows || Platform.isLinux) {
+    // تهيئة قاعدة البيانات لسطح المكتب
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
   final SqlAccountingRepository repository = SqlAccountingRepository();
 
   runApp(

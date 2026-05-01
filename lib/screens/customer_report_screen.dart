@@ -1,4 +1,5 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../repositories/report_repository.dart';
 import '../services/report_service.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -67,7 +68,7 @@ class _CustomerReportScreenState
                 ),
               ),
               pw.SizedBox(height: 20),
-              pw.Table.fromTextArray(
+              pw.TableHelper.fromTextArray(
                 headers: [
                   "Date",
                   "Description",
@@ -148,7 +149,7 @@ class _CustomerReportScreenState
 
     } catch (e) {
 
-      print(e);
+      debugPrint(e.toString());
 
       if (mounted) {
 
@@ -276,7 +277,7 @@ class _CustomerReportScreenState
 
                   DropdownButtonFormField<String>(
 
-                    value: selectedCustomer,
+                    initialValue: selectedCustomer,
 
                     decoration:
                         InputDecoration(

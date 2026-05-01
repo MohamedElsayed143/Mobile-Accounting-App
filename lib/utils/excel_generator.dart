@@ -18,6 +18,6 @@ class ExcelGenerator {
       ]);
     }
 
-    excel.save(fileName: "report.xlsx");
+    excel.save();
   }
 }

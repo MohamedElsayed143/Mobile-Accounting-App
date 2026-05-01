@@ -11,7 +11,7 @@ class PdfGenerator {
     pdf.addPage(
       pw.Page(
         build: (context) {
-          return pw.Table.fromTextArray(
+          return pw.TableHelper.fromTextArray(
             headers: ["Date", "Description", "Debit", "Credit", "Balance"],
             data: data.map((row) {
               return [

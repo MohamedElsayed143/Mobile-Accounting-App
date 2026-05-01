@@ -19,9 +19,23 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'accounting.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          phone TEXT NOT NULL UNIQUE,
+          password TEXT NOT NULL
+        )
+      ''');
+    }
   }
 
   Future _onCreate(Database db, int version) async {
@@ -50,6 +64,15 @@ class DatabaseHelper {
         invoice_id INTEGER NOT NULL,
         item_name TEXT,
         total_price REAL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        phone TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL
       )
     ''');
 
@@ -103,5 +126,38 @@ class DatabaseHelper {
         await txn.insert('invoice_items', item);
       }
     });
+  }
+  // --- User Authentication Methods ---
+
+  Future<bool> checkPhoneExists(String phone) async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'users',
+      where: 'phone = ?',
+      whereArgs: [phone],
+    );
+    return result.isNotEmpty;
+  }
+
+  Future<int> registerUser(String name, String phone, String password) async {
+    final db = await database;
+    return await db.insert('users', {
+      'name': name,
+      'phone': phone,
+      'password': password,
+    });
+  }
+
+  Future<Map<String, dynamic>?> loginUser(String phone, String password) async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'users',
+      where: 'phone = ? AND password = ?',
+      whereArgs: [phone, password],
+    );
+    if (result.isNotEmpty) {
+      return result.first;
+    }
+    return null;
   }
 } // نهاية الكلاس - تأكد من وجود هذا القوس هنا فقط
