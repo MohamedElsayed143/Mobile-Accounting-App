@@ -6,7 +6,11 @@ plugins {
 }
 
 android {
+<<<<<<< HEAD
     namespace = "com.example.flutter_application_1"
+=======
+    namespace = "com.antigravity.mobileacc.mobile_acc"
+>>>>>>> ed920add641ad572834a8497a7acf871376b41b6
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +25,11 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+<<<<<<< HEAD
         applicationId = "com.example.flutter_application_1"
+=======
+        applicationId = "com.antigravity.mobileacc.mobile_acc"
+>>>>>>> ed920add641ad572834a8497a7acf871376b41b6
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

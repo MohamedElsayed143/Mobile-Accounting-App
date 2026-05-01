@@ -3,8 +3,11 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+<<<<<<< HEAD
   open_file_linux
   printing
+=======
+>>>>>>> ed920add641ad572834a8497a7acf871376b41b6
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
