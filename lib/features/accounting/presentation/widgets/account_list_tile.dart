@@ -13,58 +13,84 @@ class AccountListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Debit is positive, Credit is negative (Simplified for this view)
     final bool isDebit = account.balance >= 0;
-    final Color balanceColor = isDebit ? Colors.green[700]! : Colors.red[700]!;
+    // ألوان أكثر هدوءاً واحترافية
+    final Color balanceColor = isDebit ? const Color(0xFF2E7D32) : const Color(0xFFC62828);
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        // Balance on the LEFTSIDE (trailing in LTR, but leading in RTL if we want it on the left)
-        // Since the app is forced to RTL, 'leading' is on the right, 'trailing' is on the left.
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              account.balance.abs().toStringAsFixed(2),
-              style: TextStyle(
-                color: balanceColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            Text(
-              isDebit ? 'مدين' : 'دائن',
-              style: TextStyle(
-                color: balanceColor.withAlpha((0.7 * 255).toInt()),
-                fontSize: 10,
-              ),
-            ),
-          ],
-        ),
-        title: Text(
-          account.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 0.5, // تقليل الظل لجعله Flat ومودرن
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16), // زوايا أكثر انسيابية
+        side: BorderSide(color: Colors.grey.shade200, width: 1), // إطار خفيف جداً
+      ),
+      child: Container(
+        // إضافة خط جانبي ملون لتمييز الحالة فوراً
+        decoration: BoxDecoration(
+          border: Border(
+            right: BorderSide(color: balanceColor, width: 4),
           ),
         ),
-        subtitle: Text(
-          'كود: ${account.code}',
-          style: TextStyle(color: Colors.grey[600], fontSize: 13),
-        ),
-        // Avatar on the RIGHTSIDE (leading in RTL context)
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(context).colorScheme.primary.withAlpha((0.1 * 255).toInt()),
-          foregroundColor: Theme.of(context).colorScheme.primary,
-          child: Text(
-            account.code.isNotEmpty ? account.code[0] : 'أ',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+        child: ListTile(
+          onTap: onTap,
+          contentPadding: const EdgeInsets.all(12),
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: balanceColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isDebit ? Icons.arrow_downward : Icons.arrow_upward,
+              color: balanceColor,
+              size: 20,
+            ),
+          ),
+          title: Text(
+            account.name,
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+              color: Color(0xFF263238),
+            ),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Text(
+              'كود: ${account.code}',
+              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+            ),
+          ),
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end, // محاذاة لليسار في RTL
+            children: [
+              Text(
+                '${account.balance.abs().toStringAsFixed(2)}',
+                style: TextStyle(
+                  color: balanceColor,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 17,
+                  fontFamily: 'Roboto', // الأرقام في Roboto شكلها احترافي أكتر
+                ),
+              ),
+              const SizedBox(height: 2),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: balanceColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  isDebit ? 'مدين' : 'دائن',
+                  style: TextStyle(
+                    color: balanceColor,
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

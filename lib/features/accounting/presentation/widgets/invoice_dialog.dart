@@ -3,11 +3,13 @@ import 'package:intl/intl.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
 
 class InvoiceDialog extends StatefulWidget {
+  final int accountId;
   final InvoiceType type;
   final Function(Invoice) onSave;
 
   const InvoiceDialog({
     super.key,
+    required this.accountId,
     required this.type,
     required this.onSave,
   });
@@ -55,11 +57,13 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
             onPressed: _items.isNotEmpty && _customerController.text.isNotEmpty
                 ? () {
                     final invoice = Invoice(
+                      accountId: widget.accountId,
                       invoiceNumber: '${DateTime.now().millisecondsSinceEpoch}',
                       date: DateFormat('yyyy-MM-dd').format(_selectedDate),
                       customerName: _customerController.text,
                       items: _items,
                       type: widget.type,
+
                     );
                     widget.onSave(invoice);
                     Navigator.pop(context);

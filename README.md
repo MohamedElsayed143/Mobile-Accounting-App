@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-# flutter_application_1
-=======
 # mobile_acc
->>>>>>> ed920add641ad572834a8497a7acf871376b41b6
 
 A new Flutter project.
 

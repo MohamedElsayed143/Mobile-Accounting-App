@@ -1,92 +1,46 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
-import 'package:mobile_acc/features/accounting/domain/entities/account.dart';
-import 'package:mobile_acc/features/accounting/domain/entities/journal_entry.dart';
-import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
-import 'package:mobile_acc/features/accounting/domain/repositories/accounting_repository.dart';
+import '../../domain/entities/account.dart';
+import '../../data/repositories/sql_accounting_repository.dart'; // تأكدي من المسار الصحيح للـ Sql repository
+import 'accounting_state.dart';
+import '../../domain/entities/invoice.dart';
 
-// States
-abstract class AccountingState extends Equatable {
-  const AccountingState();
-  @override
-  List<Object?> get props => [];
-}
-
-class AccountingInitial extends AccountingState {}
-class AccountingLoading extends AccountingState {}
-class AccountingLoaded extends AccountingState {
-  final List<Account> accounts;
-  final List<JournalEntry> entries;
-  final double totalSales;
-  final double totalPurchases;
-
-  const AccountingLoaded({
-    required this.accounts,
-    this.entries = const [],
-    this.totalSales = 0.0,
-    this.totalPurchases = 0.0,
-  });
-
-  @override
-  List<Object?> get props => [accounts, entries, totalSales, totalPurchases];
-}
-class AccountingError extends AccountingState {
-  final String message;
-  const AccountingError(this.message);
-  @override
-  List<Object?> get props => [message];
-}
-
-// Cubit
 class AccountingCubit extends Cubit<AccountingState> {
-  final IAccountingRepository _repository;
-  double _totalSales = 0.0;
-  double _totalPurchases = 0.0;
+  final SqlAccountingRepository repository;
 
-  AccountingCubit(this._repository) : super(AccountingInitial());
+  AccountingCubit(this.repository) : super(AccountingInitial());
 
+  // دالة تحميل الحسابات
   Future<void> loadAccounts() async {
     emit(AccountingLoading());
     try {
-      final accounts = await _repository.getAccounts();
-      emit(AccountingLoaded(
-        accounts: accounts,
-        totalSales: _totalSales,
-        totalPurchases: _totalPurchases,
-      ));
+      final accounts = await repository.getAccounts(); // تم تعديل _repository إلى repository
+      emit(AccountingLoaded(accounts));
     } catch (e) {
       emit(AccountingError('فشل تحميل الحسابات: $e'));
     }
   }
 
-  Future<void> addInvoice(Invoice invoice) async {
+  // دالة إضافة فاتورة جديدة
+  void addInvoice(Invoice invoice) async {
     try {
-      await _repository.saveInvoice(invoice);
-      
-      // Update local totals
-      if (invoice.type == InvoiceType.sale) {
-        _totalSales += invoice.totalAmount;
-      } else {
-        _totalPurchases += invoice.totalAmount;
-      }
-
+      await repository.addInvoice(invoice);
+      // بعد الحفظ بننادي على loadAccounts عشان نحدث القائمة في الواجهة
       await loadAccounts();
     } catch (e) {
-      emit(AccountingError('فشل حفظ الفاتورة: $e'));
+      debugPrint("Error adding invoice: $e");
+      emit(AccountingError('فشل إضافة الفاتورة: $e'));
     }
   }
 
-  Future<void> addJournalEntry(JournalEntry entry) async {
-    if (!entry.isValid) {
-      emit(const AccountingError('القيد غير متوازن: مجموع المدين لا يساوي مجموع الدائن'));
-      return;
-    }
-
+  // دالة إضافة حساب جديد
+  Future<void> addNewAccount(Account newAccount) async {
     try {
-      await _repository.addJournalEntry(entry);
+      await repository.addAccount(newAccount); // تم تعديل _repository إلى repository
+      emit(AccountAddedSuccess());
       await loadAccounts();
     } catch (e) {
-      emit(AccountingError('فشل إضافة القيد: $e'));
+      emit(AccountingError('فشل إضافة الحساب: $e'));
     }
   }
 }

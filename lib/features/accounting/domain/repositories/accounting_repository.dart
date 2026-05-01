@@ -3,7 +3,9 @@ import 'package:mobile_acc/features/accounting/domain/entities/journal_entry.dar
 import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
 
 abstract class IAccountingRepository {
+  // 1. جلب قائمة الحسابات
   Future<List<Account>> getAccounts();
-  Future<void> addJournalEntry(JournalEntry entry);
+  // 3. حفظ الفواتير
   Future<void> saveInvoice(Invoice invoice);
+  Future<void> addAccount(Account account);
 }

@@ -25,6 +25,8 @@ class Invoice extends Equatable {
   final String customerName;
   final List<InvoiceItem> items;
   final InvoiceType type;
+  final int accountId;
+
 
   const Invoice({
     required this.invoiceNumber,
@@ -32,10 +34,11 @@ class Invoice extends Equatable {
     required this.customerName,
     required this.items,
     required this.type,
+    required this.accountId,
   });
 
   double get totalAmount => items.fold(0, (sum, item) => sum + item.total);
 
   @override
-  List<Object?> get props => [invoiceNumber, date, customerName, items, type];
+  List<Object?> get props => [invoiceNumber, date, customerName, items, type,accountId];
 }

@@ -1,0 +1,107 @@
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import '../../domain/entities/account.dart';
+
+class DatabaseHelper {
+  static final DatabaseHelper _instance = DatabaseHelper._internal();
+  factory DatabaseHelper() => _instance;
+  DatabaseHelper._internal();
+
+  static Database? _database;
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
+  }
+
+  Future<Database> _initDatabase() async {
+    String path = join(await getDatabasesPath(), 'accounting.db');
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: _onCreate,
+    );
+  }
+
+  Future _onCreate(Database db, int version) async {
+    await db.execute('''
+      CREATE TABLE accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        type INTEGER NOT NULL,
+        balance REAL DEFAULT 0.0
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE invoices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL,
+        total_amount REAL DEFAULT 0.0,
+        account_id INTEGER
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE invoice_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        invoice_id INTEGER NOT NULL,
+        item_name TEXT,
+        total_price REAL
+      )
+    ''');
+
+    await _insertInitialAccounts(db);
+  }
+
+  Future<int> insertAccount(Account account) async {
+    final db = await database;
+    return await db.insert('accounts', account.toMap());
+  }
+
+  Future<int> updateAccount(Account account) async {
+    final db = await database;
+    return await db.update(
+      'accounts',
+      account.toMap(),
+      where: 'id = ?',
+      whereArgs: [account.id],
+    );
+  }
+
+  Future<int> deleteAccount(int id) async {
+    final db = await database;
+    return await db.delete('accounts', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future _insertInitialAccounts(Database db) async {
+    final List<Map<String, dynamic>> accountsList = [
+      {'code': '1000', 'name': 'الخزينة', 'type': 0, 'balance': 0.0},
+    ];
+    for (var acc in accountsList) {
+      await db.insert('accounts', acc);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getInvoices() async {
+    final db = await database;
+    return await db.query('Invoices');
+  }
+
+  Future<void> insertInvoice(
+      Map<String, dynamic> invoice,
+      List<Map<String, dynamic>> items) async {
+    final db = await database;
+
+    await db.transaction((txn) async {
+      int invoiceId = await txn.insert('invoices', invoice);
+
+      for (var item in items) {
+        item['invoice_id'] = invoiceId;
+        await txn.insert('invoice_items', item);
+      }
+    });
+  }
+} // نهاية الكلاس - تأكد من وجود هذا القوس هنا فقط

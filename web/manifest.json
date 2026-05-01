@@ -1,11 +1,6 @@
 {
-<<<<<<< HEAD
-    "name": "flutter_application_1",
-    "short_name": "flutter_application_1",
-=======
     "name": "mobile_acc",
     "short_name": "mobile_acc",
->>>>>>> ed920add641ad572834a8497a7acf871376b41b6
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

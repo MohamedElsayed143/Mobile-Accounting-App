@@ -1,62 +1,75 @@
-import 'package:mobile_acc/core/database/database_helper.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/account.dart';
-import 'package:mobile_acc/features/accounting/domain/entities/journal_entry.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
 import 'package:mobile_acc/features/accounting/domain/repositories/accounting_repository.dart';
+import '../datasources/database_helper.dart';
 
 class SqlAccountingRepository implements IAccountingRepository {
-  final DatabaseHelper dbHelper = DatabaseHelper();
+  final dbHelper = DatabaseHelper();
 
+  // ✅ 1. جلب الحسابات
   @override
   Future<List<Account>> getAccounts() async {
     final db = await dbHelper.database;
-    final List<Map<String, dynamic>> maps = await db.query('accounts');
-    return maps.map((m) => Account.fromMap(m)).toList();
-  }
+    final maps = await db.query('accounts');
 
+    return maps.map((e) => Account.fromMap(e)).toList();
+  }
   @override
-  Future<void> addJournalEntry(JournalEntry entry) async {
+  Future<void> addInvoice(Invoice invoice) async {
     final db = await dbHelper.database;
+
+    // بنستخدم transaction لضمان حفظ الفاتورة وعناصرها مع بعض أو لا شيء
     await db.transaction((txn) async {
-      int entryId = await txn.insert('journal_entries', entry.toMap());
-      for (var line in entry.lines) {
-        await txn.insert('transactions', {
-          ...line.toMap(),
-          'entry_id': entryId,
+      // 1. حفظ رأس الفاتورة في جدول invoices
+      int invoiceId = await txn.insert('invoices', {
+        'accountId': invoice.accountId,
+        'invoiceNumber': invoice.invoiceNumber,
+        'date': invoice.date,
+        'customerName': invoice.customerName,
+        'type': invoice.type == InvoiceType.sale ? 'sale' : 'purchase',
+        'totalAmount': invoice.totalAmount,
+      });
+
+      // 2. حفظ أصناف الفاتورة في جدول منفصل (invoice_items)
+      for (var item in invoice.items) {
+        await txn.insert('invoice_items', {
+          'invoiceId': invoiceId, // ربط الصنف بالفاتورة
+          'description': item.description,
+          'quantity': item.quantity,
+          'price': item.price,
+          'total': item.total,
         });
-        await txn.rawUpdate(
-          'UPDATE accounts SET balance = balance + ? WHERE id = ?',
-          [line.debit - line.credit, line.accountId]
-        );
       }
     });
   }
+  // ✅ 2. إضافة حساب
+  @override
+  Future<void> addAccount(Account account) async {
+    final db = await dbHelper.database;
+    await db.insert('accounts', account.toMap());
+  }
 
+  // ✅ 3. حفظ فاتورة + تحديث الرصيد
   @override
   Future<void> saveInvoice(Invoice invoice) async {
-    // For SQL, we would save the invoice table AND generate a balanced Journal Entry.
-    // For this prototype, we'll focus on the accounting effect.
-    final amount = invoice.totalAmount;
-    
-    // Construct automated journal entry based on invoice type
-    final List<TransactionLine> lines = [];
-    if (invoice.type == InvoiceType.sale) {
-      lines.add(TransactionLine(accountId: 1, debit: amount, credit: 0.0)); // Cash
-      lines.add(TransactionLine(accountId: 5, debit: 0.0, credit: amount)); // Sales
-    } else {
-      lines.add(TransactionLine(accountId: 6, debit: amount, credit: 0.0)); // Expenses
-      lines.add(TransactionLine(accountId: 1, debit: 0.0, credit: amount)); // Cash
-    }
+    final db = await dbHelper.database;
 
-    final entry = JournalEntry(
-      date: invoice.date,
-      reference: 'INV-${invoice.invoiceNumber}',
-      description: 'Automated Entry for ${invoice.type == InvoiceType.sale ? "Sales" : "Purchase"} Invoice: ${invoice.invoiceNumber}',
-      lines: lines,
+    // إدخال الفاتورة
+    await db.insert('invoices', {
+      'date': invoice.date,
+      'total_amount': invoice.totalAmount,
+      'account_id': invoice.accountId,
+    });
+
+    // حساب التغيير في الرصيد
+    double amount = invoice.type == InvoiceType.sale
+        ? invoice.totalAmount
+        : -invoice.totalAmount;
+
+    // تحديث رصيد الحساب
+    await db.rawUpdate(
+      'UPDATE accounts SET balance = balance + ? WHERE id = ?',
+      [amount, invoice.accountId],
     );
-
-    await addJournalEntry(entry);
   }
 }
-
-IAccountingRepository getRepository() => SqlAccountingRepository();
