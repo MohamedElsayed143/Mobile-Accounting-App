@@ -27,18 +27,20 @@ environment:
 # dependencies can be manually updated by changing the version numbers below to
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
-dependencies:
-  flutter:  
-    sdk: flutter   
 
-  pdf:  ^3.10.0   
-  printing: ^5.11.0 
-  excel: ^2.1.0
-  path_provider: ^2.0.0  
-  open_file: ^3.2.1  
+  dependencies:
+  flutter:
+    sdk: flutter
 
+  pdf: ^3.10.4
+  printing: ^5.12.0   # ← ضيفي السطر ده
+  excel: ^2.0.0
+  path_provider: ^2.1.2
+  open_file: ^3.3.2
 
-  # The following adds the Cupertino Icons font to your application.
+  cupertino_icons: ^1.0.8
+
+  # The following adds the Cupertino Icons font to yo ur application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
