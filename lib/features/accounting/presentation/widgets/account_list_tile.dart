@@ -37,7 +37,7 @@ class AccountListTile extends StatelessWidget {
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: balanceColor.withOpacity(0.1),
+              color: balanceColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -66,7 +66,7 @@ class AccountListTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end, // محاذاة لليسار في RTL
             children: [
               Text(
-                '${account.balance.abs().toStringAsFixed(2)}',
+                account.balance.abs().toStringAsFixed(2),
                 style: TextStyle(
                   color: balanceColor,
                   fontWeight: FontWeight.w900,
@@ -78,7 +78,7 @@ class AccountListTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: balanceColor.withOpacity(0.1),
+                  color: balanceColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(

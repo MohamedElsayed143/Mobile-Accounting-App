@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_cubit.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_state.dart';
-import 'package:mobile_acc/features/accounting/presentation/widgets/invoice_dialog.dart';
+import 'package:mobile_acc/features/accounting/presentation/widgets/smart_invoice_dialog.dart';
 
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({super.key});
@@ -25,7 +25,6 @@ class _InvoicesPageState extends State<InvoicesPage>
         _loadForTab(_tabController.index);
       }
     });
-    // تحميل فواتير البيع أول ما الصفحة تفتح
     context.read<AccountingCubit>().loadInvoices(type: 'sale');
   }
 
@@ -40,12 +39,17 @@ class _InvoicesPageState extends State<InvoicesPage>
     super.dispose();
   }
 
-  void _openNewInvoiceDialog(InvoiceType type) async {
+  Future<void> _openNewInvoiceDialog(InvoiceType type) async {
     final cubit = context.read<AccountingCubit>();
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
 
+    // جلب البيانات المطلوبة للفاتورة
     final accounts = await cubit.repository.getAccounts();
+    final customers = await cubit.repository.getCustomers();
+    final suppliers = await cubit.repository.getSuppliers();
+    final products = await cubit.repository.getProducts();
+
     if (!mounted) return;
 
     if (accounts.isEmpty) {
@@ -57,9 +61,12 @@ class _InvoicesPageState extends State<InvoicesPage>
 
     await nav.push(
       MaterialPageRoute(
-        builder: (context) => InvoiceDialog(
-          accountId: accounts.first.id!,
+        builder: (context) => SmartInvoiceDialog(
           type: type,
+          customers: customers,
+          suppliers: suppliers,
+          products: products,
+          accountId: accounts.first.id!,
           onSave: (invoice) async {
             await cubit.addInvoice(invoice);
             messenger.showSnackBar(
@@ -74,7 +81,6 @@ class _InvoicesPageState extends State<InvoicesPage>
       ),
     );
 
-    // إعادة تحميل الفواتير بعد الرجوع
     _loadForTab(_tabController.index);
   }
 
@@ -83,8 +89,7 @@ class _InvoicesPageState extends State<InvoicesPage>
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('الفواتير',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('الفواتير', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color(0xFF00695C),
         foregroundColor: Colors.white,
@@ -104,9 +109,7 @@ class _InvoicesPageState extends State<InvoicesPage>
         backgroundColor: const Color(0xFF00695C),
         foregroundColor: Colors.white,
         onPressed: () {
-          final type = _tabController.index == 0
-              ? InvoiceType.sale
-              : InvoiceType.purchase;
+          final type = _tabController.index == 0 ? InvoiceType.sale : InvoiceType.purchase;
           _openNewInvoiceDialog(type);
         },
         icon: const Icon(Icons.add),
@@ -131,88 +134,51 @@ class _InvoiceListView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AccountingCubit, AccountingState>(
       builder: (context, state) {
-        if (state is AccountingLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        if (state is AccountingLoading) return const Center(child: CircularProgressIndicator());
 
         if (state is AccountingError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 60, color: Colors.red),
-                const SizedBox(height: 12),
-                Text(state.message, textAlign: TextAlign.center),
-              ],
-            ),
-          );
+          return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            const Icon(Icons.error_outline, size: 60, color: Colors.red),
+            const SizedBox(height: 12),
+            Text(state.message, textAlign: TextAlign.center),
+          ]));
         }
 
         if (state is InvoicesLoaded) {
-          final invoices =
-              state.invoices.where((inv) => inv.type == type).toList();
+          final invoices = state.invoices.where((inv) => inv.type == type).toList();
 
           if (invoices.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    type == InvoiceType.sale
-                        ? Icons.receipt_long
-                        : Icons.inventory_2_outlined,
-                    size: 80,
-                    color: Colors.grey[300],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    type == InvoiceType.sale
-                        ? 'لا توجد فواتير بيع بعد'
-                        : 'لا توجد فواتير شراء بعد',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 16),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'اضغط + لإضافة فاتورة جديدة',
-                    style: TextStyle(color: Colors.grey[400], fontSize: 13),
-                  ),
-                ],
-              ),
-            );
+            return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(type == InvoiceType.sale ? Icons.receipt_long : Icons.inventory_2_outlined,
+                  size: 80, color: Colors.grey[300]),
+              const SizedBox(height: 16),
+              Text(type == InvoiceType.sale ? 'لا توجد فواتير بيع بعد' : 'لا توجد فواتير شراء بعد',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+              const SizedBox(height: 8),
+              Text('اضغط + لإضافة فاتورة جديدة',
+                  style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+            ]));
           }
 
-          // حساب الإجمالي
-          final total =
-              invoices.fold(0.0, (sum, inv) => sum + inv.totalAmount);
-
+          final total = invoices.fold(0.0, (sum, inv) => sum + inv.totalAmount);
           return Column(
             children: [
-              // شريط الإجمالي
               Container(
                 width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 color: type == InvoiceType.sale
                     ? Colors.teal.withValues(alpha: 0.1)
                     : Colors.blueGrey.withValues(alpha: 0.1),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '${invoices.length} فاتورة',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    Text(
-                      'الإجمالي: ${total.toStringAsFixed(2)} ج.م',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: type == InvoiceType.sale
-                            ? Colors.teal[700]
-                            : Colors.blueGrey[700],
-                      ),
-                    ),
+                    Text('${invoices.length} فاتورة',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    Text('الإجمالي: ${total.toStringAsFixed(2)} ج.م',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: type == InvoiceType.sale ? Colors.teal[700] : Colors.blueGrey[700])),
                   ],
                 ),
               ),
@@ -220,16 +186,13 @@ class _InvoiceListView extends StatelessWidget {
                 child: ListView.builder(
                   padding: const EdgeInsets.all(12),
                   itemCount: invoices.length,
-                  itemBuilder: (context, index) {
-                    return _InvoiceCard(
-                        invoice: invoices[index], type: type);
-                  },
+                  itemBuilder: (context, index) =>
+                      _InvoiceCard(invoice: invoices[index], type: type),
                 ),
               ),
             ],
           );
         }
-
         return const SizedBox.shrink();
       },
     );
@@ -239,7 +202,6 @@ class _InvoiceListView extends StatelessWidget {
 class _InvoiceCard extends StatelessWidget {
   final Invoice invoice;
   final InvoiceType type;
-
   const _InvoiceCard({required this.invoice, required this.type});
 
   @override
@@ -254,28 +216,19 @@ class _InvoiceCard extends StatelessWidget {
       child: ExpansionTile(
         leading: CircleAvatar(
           backgroundColor: color.withValues(alpha: 0.12),
-          child: Icon(
-            isSale ? Icons.trending_up : Icons.trending_down,
-            color: color,
-            size: 20,
-          ),
+          child: Icon(isSale ? Icons.trending_up : Icons.trending_down, color: color, size: 20),
         ),
-        title: Text(
-          invoice.customerName,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
+        title: Text(invoice.partyName,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         subtitle: Text(
           'رقم: ${invoice.invoiceNumber.length > 8 ? invoice.invoiceNumber.substring(invoice.invoiceNumber.length - 8) : invoice.invoiceNumber}  •  ${invoice.date}',
           style: const TextStyle(fontSize: 11, color: Colors.grey),
         ),
-        trailing: Text(
-          '${invoice.totalAmount.toStringAsFixed(2)} ج.م',
-          style: TextStyle(
-            color: isSale ? Colors.teal[700] : Colors.blueGrey[700],
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
-        ),
+        trailing: Text('${invoice.totalAmount.toStringAsFixed(2)} ج.م',
+            style: TextStyle(
+                color: isSale ? Colors.teal[700] : Colors.blueGrey[700],
+                fontWeight: FontWeight.bold,
+                fontSize: 15)),
         children: [
           const Divider(height: 1),
           Padding(
@@ -284,28 +237,16 @@ class _InvoiceCard extends StatelessWidget {
               children: invoice.items.map((item) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.circle, size: 6, color: Colors.grey),
-                      const SizedBox(width: 8),
-                      Expanded(
-                          child: Text(item.description,
-                              style: const TextStyle(fontSize: 13))),
-                      Text(
-                        '${item.quantity.toStringAsFixed(0)} × ${item.price.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.grey),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${item.total.toStringAsFixed(2)} ج.م',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: color[700]),
-                      ),
-                    ],
-                  ),
+                  child: Row(children: [
+                    const Icon(Icons.circle, size: 6, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(item.description, style: const TextStyle(fontSize: 13))),
+                    Text('${item.quantity.toStringAsFixed(0)} × ${item.price.toStringAsFixed(2)}',
+                        style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    const SizedBox(width: 8),
+                    Text('${item.total.toStringAsFixed(2)} ج.م',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color[700])),
+                  ]),
                 );
               }).toList(),
             ),

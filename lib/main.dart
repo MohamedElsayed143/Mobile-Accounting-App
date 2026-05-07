@@ -8,8 +8,10 @@ import 'package:mobile_acc/features/accounting/data/repositories/sql_accounting_
 import 'package:mobile_acc/features/accounting/presentation/widgets/summary_charts_widget.dart';
 import 'package:mobile_acc/features/accounting/presentation/pages/login_page.dart';
 import 'package:mobile_acc/features/accounting/presentation/pages/invoices_page.dart';
+import 'package:mobile_acc/features/accounting/presentation/pages/customers_page.dart';
+import 'package:mobile_acc/features/accounting/presentation/pages/suppliers_page.dart';
+import 'package:mobile_acc/features/accounting/presentation/pages/products_page.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'dart:io' show Platform;
@@ -70,6 +72,17 @@ class MainAccountingPage extends StatelessWidget {
       ),
       body: BlocBuilder<AccountingCubit, AccountingState>(
         builder: (context, state) {
+          // إعادة تحميل الحسابات لو الـ state مش خاص بالداشبورد (مثلاً بعد الرجوع من صفحة الفواتير أو العملاء)
+          if (state is InvoicesLoaded || 
+              state is CustomersLoaded || 
+              state is SuppliersLoaded || 
+              state is ProductsLoaded ||
+              state is AccountAddedSuccess) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              context.read<AccountingCubit>().loadAccounts();
+            });
+            return const Center(child: CircularProgressIndicator());
+          }
           if (state is AccountingLoading) return const Center(child: CircularProgressIndicator());
           if (state is AccountingLoaded) {
             return SingleChildScrollView(
@@ -84,6 +97,11 @@ class MainAccountingPage extends StatelessWidget {
                   ),
                   _buildChartsSection(state),
                   _buildQuickActions(context, state),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text("إدارة البيانات", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  ),
+                  _buildManagementSection(context, state),
                   const Padding(
                     padding: EdgeInsets.all(16),
                     child: Text("دليل الحسابات", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -101,7 +119,24 @@ class MainAccountingPage extends StatelessWidget {
               ),
             );
           }
-          return const Center(child: Text("حدث خطأ في تحميل البيانات"));
+          if (state is AccountingError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                  const SizedBox(height: 12),
+                  Text((state).message, textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => context.read<AccountingCubit>().loadAccounts(),
+                    child: const Text('إعادة المحاولة'),
+                  ),
+                ],
+              ),
+            );
+          }
+          return const Center(child: CircularProgressIndicator());
         },
       ),
     );
@@ -130,9 +165,9 @@ class MainAccountingPage extends StatelessWidget {
       padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
-          _statCard("إجمالي المبيعات", "${state.totalSales}", Colors.green, Icons.trending_up),
+          _statCard("إجمالي المبيعات", "${state.totalSales.toStringAsFixed(2)}", Colors.green, Icons.trending_up),
           const SizedBox(width: 12),
-          _statCard("إجمالي المشتريات", "${state.totalPurchases}", Colors.redAccent, Icons.trending_down),
+          _statCard("إجمالي المشتريات", "${state.totalPurchases.toStringAsFixed(2)}", Colors.redAccent, Icons.trending_down),
         ],
       ),
     );
@@ -185,16 +220,91 @@ class MainAccountingPage extends StatelessWidget {
     );
   }
 
+  Widget _buildManagementSection(BuildContext context, AccountingLoaded state) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: 3,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.9,
+        children: [
+          _managementCard(
+            context,
+            "العملاء",
+            Icons.people_alt,
+            const Color(0xFF00897B),
+            const CustomersPage(),
+            state.customerCount,
+          ),
+          _managementCard(
+            context,
+            "الموردين",
+            Icons.storefront,
+            const Color(0xFF1565C0),
+            const SuppliersPage(),
+            state.supplierCount,
+          ),
+          _managementCard(
+            context,
+            "المنتجات",
+            Icons.inventory_2,
+            const Color(0xFF6A1B9A),
+            const ProductsPage(),
+            state.productCount,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _managementCard(BuildContext context, String title, IconData icon, Color color, Widget page, int count) {
+    return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => page)),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8)],
+          border: Border.all(color: color.withValues(alpha: 0.1)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(height: 8),
+            Text(title, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
+            Text("$count", style: TextStyle(color: color.withValues(alpha: 0.6), fontSize: 11)),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _actionCard(BuildContext context, String title, IconData icon, Color color, InvoiceType type) {
     return Expanded(
       child: InkWell(
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => const InvoicesPage(),
             ),
           );
+          // بعد الرجوع من صفحة الفواتير، نعيد تحميل الحسابات لتحديث الداشبورد
+          if (context.mounted) {
+            context.read<AccountingCubit>().loadAccounts();
+          }
         },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
