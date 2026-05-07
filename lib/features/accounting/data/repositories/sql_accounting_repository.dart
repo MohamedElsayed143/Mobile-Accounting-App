@@ -11,65 +11,68 @@ class SqlAccountingRepository implements IAccountingRepository {
   Future<List<Account>> getAccounts() async {
     final db = await dbHelper.database;
     final maps = await db.query('accounts');
-
     return maps.map((e) => Account.fromMap(e)).toList();
   }
+
+  // ✅ 2. إضافة فاتورة وحفظها في قاعدة البيانات
   @override
   Future<void> addInvoice(Invoice invoice) async {
-    final db = await dbHelper.database;
-
-    // بنستخدم transaction لضمان حفظ الفاتورة وعناصرها مع بعض أو لا شيء
-    await db.transaction((txn) async {
-      // 1. حفظ رأس الفاتورة في جدول invoices
-      int invoiceId = await txn.insert('invoices', {
-        'accountId': invoice.accountId,
-        'invoiceNumber': invoice.invoiceNumber,
+    await dbHelper.insertFullInvoice(
+      {
+        'account_id': invoice.accountId,
+        'invoice_number': invoice.invoiceNumber,
         'date': invoice.date,
-        'customerName': invoice.customerName,
+        'customer_name': invoice.customerName,
         'type': invoice.type == InvoiceType.sale ? 'sale' : 'purchase',
-        'totalAmount': invoice.totalAmount,
-      });
-
-      // 2. حفظ أصناف الفاتورة في جدول منفصل (invoice_items)
-      for (var item in invoice.items) {
-        await txn.insert('invoice_items', {
-          'invoiceId': invoiceId, // ربط الصنف بالفاتورة
-          'description': item.description,
-          'quantity': item.quantity,
-          'price': item.price,
-          'total': item.total,
-        });
-      }
-    });
+        'total_amount': invoice.totalAmount,
+      },
+      invoice.items
+          .map((item) => {
+                'description': item.description,
+                'quantity': item.quantity,
+                'price': item.price,
+                'total': item.total,
+              })
+          .toList(),
+    );
   }
-  // ✅ 2. إضافة حساب
+
+  // ✅ 3. جلب الفواتير من قاعدة البيانات
+  @override
+  Future<List<Invoice>> getInvoices({String? type}) async {
+    final maps = await dbHelper.getInvoices(type: type);
+    final List<Invoice> invoices = [];
+    for (var map in maps) {
+      final itemMaps = await dbHelper.getInvoiceItems(map['id'] as int);
+      final items = itemMaps
+          .map((i) => InvoiceItem(
+                description: i['description'] ?? '',
+                quantity: (i['quantity'] as num).toDouble(),
+                price: (i['price'] as num).toDouble(),
+              ))
+          .toList();
+      invoices.add(Invoice(
+        invoiceNumber: map['invoice_number'] ?? '',
+        date: map['date'] ?? '',
+        customerName: map['customer_name'] ?? '',
+        items: items,
+        type: map['type'] == 'sale' ? InvoiceType.sale : InvoiceType.purchase,
+        accountId: map['account_id'] ?? 0,
+      ));
+    }
+    return invoices;
+  }
+
+  // ✅ 4. إضافة حساب جديد
   @override
   Future<void> addAccount(Account account) async {
     final db = await dbHelper.database;
     await db.insert('accounts', account.toMap());
   }
 
-  // ✅ 3. حفظ فاتورة + تحديث الرصيد
+  // ✅ 5. حفظ فاتورة + تحديث الرصيد (مستخدمة للتوافق القديم)
   @override
   Future<void> saveInvoice(Invoice invoice) async {
-    final db = await dbHelper.database;
-
-    // إدخال الفاتورة
-    await db.insert('invoices', {
-      'date': invoice.date,
-      'total_amount': invoice.totalAmount,
-      'account_id': invoice.accountId,
-    });
-
-    // حساب التغيير في الرصيد
-    double amount = invoice.type == InvoiceType.sale
-        ? invoice.totalAmount
-        : -invoice.totalAmount;
-
-    // تحديث رصيد الحساب
-    await db.rawUpdate(
-      'UPDATE accounts SET balance = balance + ? WHERE id = ?',
-      [amount, invoice.accountId],
-    );
+    await addInvoice(invoice);
   }
 }

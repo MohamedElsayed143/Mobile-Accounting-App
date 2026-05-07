@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/account.dart';
-import '../../data/repositories/sql_accounting_repository.dart'; // تأكدي من المسار الصحيح للـ Sql repository
+import '../../data/repositories/sql_accounting_repository.dart';
 import 'accounting_state.dart';
 import '../../domain/entities/invoice.dart';
 
@@ -14,7 +14,7 @@ class AccountingCubit extends Cubit<AccountingState> {
   Future<void> loadAccounts() async {
     emit(AccountingLoading());
     try {
-      final accounts = await repository.getAccounts(); // تم تعديل _repository إلى repository
+      final accounts = await repository.getAccounts();
       emit(AccountingLoaded(accounts));
     } catch (e) {
       emit(AccountingError('فشل تحميل الحسابات: $e'));
@@ -22,21 +22,31 @@ class AccountingCubit extends Cubit<AccountingState> {
   }
 
   // دالة إضافة فاتورة جديدة
-  void addInvoice(Invoice invoice) async {
+  Future<void> addInvoice(Invoice invoice) async {
     try {
       await repository.addInvoice(invoice);
-      // بعد الحفظ بننادي على loadAccounts عشان نحدث القائمة في الواجهة
-      await loadAccounts();
+      debugPrint("✅ تم حفظ الفاتورة بنجاح");
     } catch (e) {
-      debugPrint("Error adding invoice: $e");
+      debugPrint("❌ Error adding invoice: $e");
       emit(AccountingError('فشل إضافة الفاتورة: $e'));
+    }
+  }
+
+  // دالة جلب الفواتير (بيع أو شراء)
+  Future<void> loadInvoices({String? type}) async {
+    emit(AccountingLoading());
+    try {
+      final invoices = await repository.getInvoices(type: type);
+      emit(InvoicesLoaded(invoices));
+    } catch (e) {
+      emit(AccountingError('فشل تحميل الفواتير: $e'));
     }
   }
 
   // دالة إضافة حساب جديد
   Future<void> addNewAccount(Account newAccount) async {
     try {
-      await repository.addAccount(newAccount); // تم تعديل _repository إلى repository
+      await repository.addAccount(newAccount);
       emit(AccountAddedSuccess());
       await loadAccounts();
     } catch (e) {

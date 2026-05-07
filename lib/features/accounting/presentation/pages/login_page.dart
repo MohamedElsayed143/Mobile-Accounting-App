@@ -174,7 +174,21 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     await _dbHelper.registerUser(name, phone, password);
-    _navigateToHome();
+
+    // بعد التسجيل الناجح، ارجع لصفحة تسجيل الدخول
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول'),
+        backgroundColor: Color(0xFF00695C),
+      ),
+    );
+    setState(() {
+      _isLogin = true;
+      _nameController.clear();
+      _phoneController.clear();
+      _passwordController.clear();
+    });
   }
 
   void _showError(String message) {

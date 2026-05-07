@@ -7,7 +7,7 @@ import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_stat
 import 'package:mobile_acc/features/accounting/data/repositories/sql_accounting_repository.dart';
 import 'package:mobile_acc/features/accounting/presentation/widgets/summary_charts_widget.dart';
 import 'package:mobile_acc/features/accounting/presentation/pages/login_page.dart';
-import 'package:mobile_acc/features/accounting/presentation/widgets/invoice_dialog.dart';
+import 'package:mobile_acc/features/accounting/presentation/pages/invoices_page.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -161,32 +161,38 @@ class MainAccountingPage extends StatelessWidget {
   }
 
   Widget _buildQuickActions(BuildContext context, AccountingLoaded state) {
-    final int? firstAccountId = state.accounts.isNotEmpty ? state.accounts.first.id : null;
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
-          _actionCard(context, "فاتورة بيع", Icons.add_shopping_cart, Colors.green, firstAccountId),
+          _actionCard(
+            context,
+            "فاتورة بيع",
+            Icons.add_shopping_cart,
+            Colors.teal,
+            InvoiceType.sale,
+          ),
           const SizedBox(width: 12),
-          _actionCard(context, "فاتورة شراء", Icons.inventory, Colors.blueGrey, firstAccountId),
+          _actionCard(
+            context,
+            "فاتورة شراء",
+            Icons.inventory,
+            Colors.blueGrey,
+            InvoiceType.purchase,
+          ),
         ],
       ),
     );
   }
 
-  Widget _actionCard(BuildContext context, String title, IconData icon, Color color, int? accountId) {
+  Widget _actionCard(BuildContext context, String title, IconData icon, Color color, InvoiceType type) {
     return Expanded(
       child: InkWell(
         onTap: () {
-          if (accountId == null) return;
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => InvoiceDialog(
-                accountId: accountId,
-                type: title.contains("بيع") ? InvoiceType.sale : InvoiceType.purchase,
-                onSave: (invoice) => context.read<AccountingCubit>().addInvoice(invoice),
-              ),
+              builder: (context) => const InvoicesPage(),
             ),
           );
         },

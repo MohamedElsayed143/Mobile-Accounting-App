@@ -1,4 +1,5 @@
 import 'package:mobile_acc/features/accounting/domain/entities/account.dart';
+import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
 import 'package:mobile_acc/features/accounting/domain/repositories/accounting_repository.dart';
 
 class RepositoryProvider implements IAccountingRepository {
@@ -16,10 +17,26 @@ class RepositoryProvider implements IAccountingRepository {
         _accounts.add(account);
     }
 
-    // أضيفي باقي الدوال المطلوبة من الـ Interface هنا (مثل saveInvoice و addJournalEntry)
-    @override
-    Future<void> saveInvoice(dynamic invoice) async {}
+    final List<Invoice> _invoices = [];
 
     @override
-    Future<void> addJournalEntry(dynamic entry) async {}
+    Future<void> addInvoice(Invoice invoice) async {
+        _invoices.add(invoice);
+    }
+
+    @override
+    Future<List<Invoice>> getInvoices({String? type}) async {
+        if (type == null) return _invoices;
+        return _invoices.where((inv) {
+            return type == 'sale'
+                ? inv.type == InvoiceType.sale
+                : inv.type == InvoiceType.purchase;
+        }).toList();
+    }
+
+    // أضيفي باقي الدوال المطلوبة من الـ Interface هنا
+    @override
+    Future<void> saveInvoice(Invoice invoice) async {
+        _invoices.add(invoice);
+    }
 }

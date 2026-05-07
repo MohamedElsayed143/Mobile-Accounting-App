@@ -19,7 +19,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'accounting.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -28,11 +28,37 @@ class DatabaseHelper {
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('''
-        CREATE TABLE users (
+        CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           phone TEXT NOT NULL UNIQUE,
           password TEXT NOT NULL
+        )
+      ''');
+    }
+    if (oldVersion < 3) {
+      // حذف الجدولين القديمين واستبدالهم بالشكل الصحيح
+      await db.execute('DROP TABLE IF EXISTS invoice_items');
+      await db.execute('DROP TABLE IF EXISTS invoices');
+      await db.execute('''
+        CREATE TABLE invoices (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          account_id INTEGER,
+          invoice_number TEXT,
+          date TEXT NOT NULL,
+          customer_name TEXT,
+          type TEXT NOT NULL,
+          total_amount REAL DEFAULT 0.0
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE invoice_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          invoice_id INTEGER NOT NULL,
+          description TEXT,
+          quantity REAL DEFAULT 1,
+          price REAL DEFAULT 0,
+          total REAL DEFAULT 0
         )
       ''');
     }
@@ -52,9 +78,12 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE invoices (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id INTEGER,
+        invoice_number TEXT,
         date TEXT NOT NULL,
-        total_amount REAL DEFAULT 0.0,
-        account_id INTEGER
+        customer_name TEXT,
+        type TEXT NOT NULL,
+        total_amount REAL DEFAULT 0.0
       )
     ''');
 
@@ -62,8 +91,10 @@ class DatabaseHelper {
       CREATE TABLE invoice_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         invoice_id INTEGER NOT NULL,
-        item_name TEXT,
-        total_price REAL
+        description TEXT,
+        quantity REAL DEFAULT 1,
+        price REAL DEFAULT 0,
+        total REAL DEFAULT 0
       )
     ''');
 
@@ -108,19 +139,26 @@ class DatabaseHelper {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getInvoices() async {
+  Future<List<Map<String, dynamic>>> getInvoices({String? type}) async {
     final db = await database;
-    return await db.query('Invoices');
+    if (type != null) {
+      return await db.query('invoices', where: 'type = ?', whereArgs: [type], orderBy: 'id DESC');
+    }
+    return await db.query('invoices', orderBy: 'id DESC');
   }
 
-  Future<void> insertInvoice(
+  Future<List<Map<String, dynamic>>> getInvoiceItems(int invoiceId) async {
+    final db = await database;
+    return await db.query('invoice_items', where: 'invoice_id = ?', whereArgs: [invoiceId]);
+  }
+
+  Future<void> insertFullInvoice(
       Map<String, dynamic> invoice,
       List<Map<String, dynamic>> items) async {
     final db = await database;
 
     await db.transaction((txn) async {
       int invoiceId = await txn.insert('invoices', invoice);
-
       for (var item in items) {
         item['invoice_id'] = invoiceId;
         await txn.insert('invoice_items', item);
