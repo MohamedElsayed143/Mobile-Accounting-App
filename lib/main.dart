@@ -72,17 +72,7 @@ class MainAccountingPage extends StatelessWidget {
       ),
       body: BlocBuilder<AccountingCubit, AccountingState>(
         builder: (context, state) {
-          // إعادة تحميل الحسابات لو الـ state مش خاص بالداشبورد (مثلاً بعد الرجوع من صفحة الفواتير أو العملاء)
-          if (state is InvoicesLoaded || 
-              state is CustomersLoaded || 
-              state is SuppliersLoaded || 
-              state is ProductsLoaded ||
-              state is AccountAddedSuccess) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              context.read<AccountingCubit>().loadAccounts();
-            });
-            return const Center(child: CircularProgressIndicator());
-          }
+          // Dashboard state handling
           if (state is AccountingLoading) return const Center(child: CircularProgressIndicator());
           if (state is AccountingLoaded) {
             return SingleChildScrollView(
@@ -262,7 +252,12 @@ class MainAccountingPage extends StatelessWidget {
 
   Widget _managementCard(BuildContext context, String title, IconData icon, Color color, Widget page, int count) {
     return InkWell(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => page)),
+      onTap: () async {
+        await Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+        if (context.mounted) {
+          context.read<AccountingCubit>().loadAccounts();
+        }
+      },
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
