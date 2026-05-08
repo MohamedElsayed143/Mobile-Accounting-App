@@ -7,12 +7,14 @@ class InvoiceItem extends Equatable {
   final String description;
   final double quantity;
   final double price;
+  final double discount; // نسبة الخصم المطبقة
 
   const InvoiceItem({
     this.productId,
     required this.description,
     required this.quantity,
     required this.price,
+    this.discount = 0.0,
   });
 
   double get total => quantity * price;
@@ -22,6 +24,7 @@ class InvoiceItem extends Equatable {
         'description': description,
         'quantity': quantity,
         'price': price,
+        'discount': discount,
       };
 
   factory InvoiceItem.fromMap(Map<String, dynamic> map) => InvoiceItem(
@@ -29,10 +32,11 @@ class InvoiceItem extends Equatable {
         description: map['description'] ?? '',
         quantity: (map['quantity'] as num?)?.toDouble() ?? 0.0,
         price: (map['price'] as num?)?.toDouble() ?? 0.0,
+        discount: (map['discount'] as num?)?.toDouble() ?? 0.0,
       );
 
   @override
-  List<Object?> get props => [productId, description, quantity, price];
+  List<Object?> get props => [productId, description, quantity, price, discount];
 }
 
 class Invoice extends Equatable {

@@ -65,8 +65,8 @@ class _AddEntryDialogState extends State<AddEntryDialog> {
                       description: _descController.text,
                       lines: _lines,
                     );
-                    widget.onSave(entry);
                     Navigator.pop(context);
+                    widget.onSave(entry);
                   }
                 : null,
             icon: const Icon(Icons.check),

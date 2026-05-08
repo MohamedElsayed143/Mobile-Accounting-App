@@ -51,7 +51,35 @@ class FirestoreAccountingRepository implements IAccountingRepository {
   // ─── Invoices ────────────────────────────────────────────────
   @override
   Future<void> addInvoice(Invoice invoice) async {
-    await _invoices.doc(invoice.invoiceNumber).set(invoice.toMap());
+    final batch = _firestore.batch();
+    
+    // 1. إضافة الفاتورة
+    final invoiceRef = _invoices.doc(invoice.invoiceNumber);
+    batch.set(invoiceRef, invoice.toMap());
+
+    // 2. تحديث كميات وأسعار الأصناف
+    for (var item in invoice.items) {
+      if (item.productId != null) {
+        final productRef = _products.doc(item.productId);
+        
+        // نستخدم FieldValue.increment لتحديث الكمية بشكل آمن في Firestore
+        double qtyChange = invoice.type == InvoiceType.purchase ? item.quantity : -item.quantity;
+        
+        Map<String, dynamic> updates = {
+          'quantity': FieldValue.increment(qtyChange),
+        };
+
+        // إذا كانت فاتورة شراء، قد نرغب في تحديث سعر الشراء والخصم في كارت الصنف أيضاً
+        if (invoice.type == InvoiceType.purchase) {
+          updates['buyPrice'] = item.price;
+          updates['discount'] = item.discount;
+        }
+
+        batch.update(productRef, updates);
+      }
+    }
+
+    await batch.commit();
   }
 
   @override
@@ -121,9 +149,10 @@ class FirestoreAccountingRepository implements IAccountingRepository {
     await _suppliers.doc(id).delete();
   }
 
-  // ─── Products ────────────────────────────────────────────────
+  // ─── Products (Real-time with Persistence) ───────────────────
   @override
   Stream<List<Product>> getProducts() {
+    // Firestore سيقوم تلقائياً بالتحقق من الكاش المحلي أولاً بفضل الإعدادات في main.dart
     return _products.snapshots().map(
       (s) => s.docs.map((d) => Product.fromMap(d.data() as Map<String, dynamic>, documentId: d.id)).toList(),
     );

@@ -81,7 +81,7 @@ class _ProductsPageState extends State<ProductsPage> {
           hintStyle: const TextStyle(color: Colors.white70),
           prefixIcon: const Icon(Icons.search, color: Colors.white70),
           filled: true,
-          fillColor: Colors.white.withValues(alpha: 0.15),
+          fillColor: Colors.white.withOpacity(0.15),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         ),
       ),
@@ -153,7 +153,7 @@ class _ProductCard extends StatelessWidget {
           children: [
             Row(children: [
               CircleAvatar(
-                backgroundColor: const Color(0xFF6A1B9A).withValues(alpha: 0.1),
+                backgroundColor: const Color(0xFF6A1B9A).withOpacity(0.1),
                 child: const Icon(Icons.inventory_2, color: Color(0xFF6A1B9A), size: 20),
               ),
               const SizedBox(width: 12),
@@ -177,6 +177,8 @@ class _ProductCard extends StatelessWidget {
               const SizedBox(width: 8),
               _infoChip(Icons.arrow_upward, 'بيع', '${product.sellPrice.toStringAsFixed(2)} ج.م', Colors.teal),
               const SizedBox(width: 8),
+              _infoChip(Icons.percent, 'خصم', '${product.discount.toStringAsFixed(1)}%', Colors.orange),
+              const SizedBox(width: 8),
               _infoChip(Icons.inventory, 'رصيد', product.quantity.toStringAsFixed(1), _stockColor),
             ]),
           ],
@@ -190,9 +192,9 @@ class _ProductCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
+          color: color.withOpacity(0.08),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
+          border: Border.all(color: color.withOpacity(0.2)),
         ),
         child: Column(children: [
           Icon(icon, size: 14, color: color),
@@ -213,21 +215,38 @@ class _ProductForm extends StatefulWidget {
 }
 
 class _ProductFormState extends State<_ProductForm> {
-  late final TextEditingController _code, _name, _buyPrice, _sellPrice, _quantity;
+  late final TextEditingController _code, _name, _buyPrice, _sellPrice;
+  double _discount = 0;
 
   @override
   void initState() {
     super.initState();
-    _code = TextEditingController(text: widget.product?.code ?? '');
+    // توليد كود تلقائي إذا كان الصنف جديداً
+    String initialCode = widget.product?.code ?? 'P-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+    
+    _code = TextEditingController(text: initialCode);
     _name = TextEditingController(text: widget.product?.name ?? '');
     _buyPrice = TextEditingController(text: widget.product?.buyPrice.toString() ?? '0');
     _sellPrice = TextEditingController(text: widget.product?.sellPrice.toString() ?? '0');
-    _quantity = TextEditingController(text: widget.product?.quantity.toString() ?? '0');
+    _discount = widget.product?.discount ?? 0;
+  }
+
+  void _calculateDiscount() {
+    double buy = double.tryParse(_buyPrice.text) ?? 0;
+    double sell = double.tryParse(_sellPrice.text) ?? 0;
+    setState(() {
+      if (sell > 0) {
+        _discount = ((sell - buy) / sell) * 100;
+        if (_discount < 0) _discount = 0;
+      } else {
+        _discount = 0;
+      }
+    });
   }
 
   @override
   void dispose() {
-    _code.dispose(); _name.dispose(); _buyPrice.dispose(); _sellPrice.dispose(); _quantity.dispose();
+    _code.dispose(); _name.dispose(); _buyPrice.dispose(); _sellPrice.dispose();
     super.dispose();
   }
 
@@ -245,18 +264,30 @@ class _ProductFormState extends State<_ProductForm> {
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             Row(children: [
-              Expanded(child: _field(_code, 'كود الصنف *', Icons.qr_code)),
+              Expanded(child: _field(_code, 'كود الصنف', Icons.qr_code, readOnly: true)),
               const SizedBox(width: 10),
               Expanded(flex: 2, child: _field(_name, 'اسم الصنف *', Icons.inventory_2)),
             ]),
             const SizedBox(height: 10),
             Row(children: [
-              Expanded(child: _field(_buyPrice, 'سعر الشراء', Icons.arrow_downward, type: TextInputType.number)),
+              Expanded(child: _field(_buyPrice, 'سعر الشراء', Icons.arrow_downward, type: TextInputType.number, onChanged: (_) => _calculateDiscount())),
               const SizedBox(width: 10),
-              Expanded(child: _field(_sellPrice, 'سعر البيع', Icons.arrow_upward, type: TextInputType.number)),
+              Expanded(child: _field(_sellPrice, 'سعر البيع', Icons.arrow_upward, type: TextInputType.number, onChanged: (_) => _calculateDiscount())),
             ]),
-            const SizedBox(height: 10),
-            _field(_quantity, 'الكمية الحالية', Icons.inventory, type: TextInputType.number),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              child: Row(
+                children: [
+                  const Icon(Icons.percent, color: Colors.orange),
+                  const SizedBox(width: 12),
+                  const Text('نسبة الخصم التلقائية:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Spacer(),
+                  Text('${_discount.toStringAsFixed(1)}%', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.orange)),
+                ],
+              ),
+            ),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity, height: 50,
@@ -270,7 +301,8 @@ class _ProductFormState extends State<_ProductForm> {
                     name: _name.text.trim(),
                     buyPrice: double.tryParse(_buyPrice.text) ?? 0,
                     sellPrice: double.tryParse(_sellPrice.text) ?? 0,
-                    quantity: double.tryParse(_quantity.text) ?? 0,
+                    quantity: widget.product?.quantity ?? 0, // الحفاظ على الكمية السابقة
+                    discount: _discount,
                   ));
                 },
                 child: const Text('حفظ الصنف', style: TextStyle(color: Colors.white, fontSize: 16)),
@@ -282,7 +314,20 @@ class _ProductFormState extends State<_ProductForm> {
     );
   }
 
-  Widget _field(TextEditingController ctrl, String label, IconData icon, {TextInputType type = TextInputType.text}) {
-    return TextField(controller: ctrl, keyboardType: type, decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon, size: 20), border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)), isDense: true));
+  Widget _field(TextEditingController ctrl, String label, IconData icon, {TextInputType type = TextInputType.text, bool readOnly = false, Function(String)? onChanged}) {
+    return TextField(
+      controller: ctrl,
+      keyboardType: type,
+      readOnly: readOnly,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 20),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        isDense: true,
+        fillColor: readOnly ? Colors.grey[100] : null,
+        filled: readOnly,
+      ),
+    );
   }
 }

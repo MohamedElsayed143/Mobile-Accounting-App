@@ -31,20 +31,15 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
   Supplier? _selectedSupplier;
   DateTime _selectedDate = DateTime.now();
   final List<_InvoiceLine> _lines = [];
+  bool _isSaving = false;
 
   bool get _isSale => widget.type == InvoiceType.sale;
   Color get _themeColor => _isSale ? const Color(0xFF00897B) : const Color(0xFF1565C0);
 
   bool get _partySelected => _isSale ? _selectedCustomer != null : _selectedSupplier != null;
   bool get _hasItems => _lines.isNotEmpty;
-  bool get _canSave => _partySelected && _hasItems && _lines.every((l) => l.quantity > 0);
+  bool get _canSave => _partySelected && _hasItems && _lines.every((l) => l.quantity > 0) && !_isSaving;
   double get _grandTotal => _lines.fold(0, (sum, l) => sum + l.total);
-
-  String get _validationMessage {
-    if (!_partySelected) return _isSale ? '⚠️ يجب اختيار عميل أولاً' : '⚠️ يجب اختيار مورد أولاً';
-    if (!_hasItems) return '⚠️ أضف صنفاً واحداً على الأقل';
-    return '';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,10 +50,13 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
         backgroundColor: _themeColor,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            onPressed: _canSave ? _save : null,
-            icon: const Icon(Icons.check),
-          ),
+          if (_isSaving)
+            const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
+          else
+            IconButton(
+              onPressed: _canSave ? _save : null,
+              icon: const Icon(Icons.check),
+            ),
         ],
       ),
       body: Column(
@@ -137,7 +135,7 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
   Widget _buildLineCard(int index, _InvoiceLine line) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
             DropdownButtonFormField<Product>(
@@ -149,14 +147,50 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
                 if (p != null) {
                   line.price = _isSale ? p.sellPrice : p.buyPrice;
                   line.description = p.name;
+                  line.discount = p.discount;
                 }
               }),
             ),
+            const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(child: TextFormField(initialValue: line.quantity.toString(), keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'الكمية'), onChanged: (v) => setState(() => line.quantity = double.tryParse(v) ?? 0))),
+                Expanded(child: TextFormField(initialValue: line.quantity.toString(), keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'الكمية', isDense: true), onChanged: (v) => setState(() => line.quantity = double.tryParse(v) ?? 0))),
                 const SizedBox(width: 8),
-                Expanded(child: TextFormField(key: ValueKey(line.price), initialValue: line.price.toString(), keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'السعر'), onChanged: (v) => setState(() => line.price = double.tryParse(v) ?? 0))),
+                Expanded(
+                  child: TextFormField(
+                    key: ValueKey('${line.product?.id}_${line.price}'),
+                    initialValue: line.price.toString(),
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'السعر', isDense: true),
+                    onChanged: (v) {
+                      double newPrice = double.tryParse(v) ?? 0;
+                      setState(() {
+                        line.price = newPrice;
+                        if (line.product != null && line.price > 0) {
+                          double buyPrice = line.product!.buyPrice;
+                          double sellPrice = _isSale ? line.price : line.product!.sellPrice;
+                          if (!_isSale) buyPrice = line.price;
+                          
+                          if (sellPrice > 0) {
+                            line.discount = ((sellPrice - buyPrice) / sellPrice) * 100;
+                            if (line.discount < 0) line.discount = 0;
+                          }
+                        }
+                      });
+                    }
+                  )
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                  child: Column(
+                    children: [
+                      const Text('الخصم', style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold)),
+                      Text('${line.discount.toStringAsFixed(1)}%', style: const TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
                 IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => setState(() => _lines.removeAt(index))),
               ],
             ),
@@ -169,18 +203,30 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
   void _addLine() => setState(() => _lines.add(_InvoiceLine()));
 
   void _save() {
+    setState(() => _isSaving = true);
+    
     final invoice = Invoice(
       invoiceNumber: DateTime.now().millisecondsSinceEpoch.toString(),
       date: _selectedDate.toLocal().toString().split(' ')[0],
       partyName: _isSale ? _selectedCustomer!.name : _selectedSupplier!.name,
       customerId: _isSale ? _selectedCustomer!.id : null,
       supplierId: !_isSale ? _selectedSupplier!.id : null,
-      items: _lines.map((l) => InvoiceItem(productId: l.product?.id, description: l.description, quantity: l.quantity, price: l.price)).toList(),
+      items: _lines.map((l) => InvoiceItem(
+        productId: l.product?.id,
+        description: l.description,
+        quantity: l.quantity,
+        price: l.price,
+        discount: l.discount,
+      )).toList(),
       type: widget.type,
       accountId: widget.accountId,
     );
-    widget.onSave(invoice);
+
+    // نغلق النافذة أولاً لضمان الانتقال السريع
     Navigator.pop(context);
+    
+    // نمرر البيانات لعملية الحفظ الخلفية
+    widget.onSave(invoice);
   }
 }
 
@@ -189,5 +235,6 @@ class _InvoiceLine {
   String description = '';
   double quantity = 1;
   double price = 0;
+  double discount = 0;
   double get total => quantity * price;
 }

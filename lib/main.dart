@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_cubit.dart';
@@ -11,38 +12,122 @@ import 'package:mobile_acc/features/accounting/presentation/pages/customers_page
 import 'package:mobile_acc/features/accounting/presentation/pages/suppliers_page.dart';
 import 'package:mobile_acc/features/accounting/presentation/pages/products_page.dart';
 import 'package:mobile_acc/features/accounting/presentation/widgets/summary_charts_widget.dart';
-import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
 
   final FirestoreAccountingRepository repository = FirestoreAccountingRepository();
 
   runApp(
     BlocProvider(
-      create: (context) => AccountingCubit(
-        repository: repository,
-      ),
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'نظام المحاسبة',
-        theme: ThemeData(
-          primarySwatch: Colors.indigo,
-          scaffoldBackgroundColor: const Color(0xFFF4F7FC),
-          useMaterial3: true,
-        ),
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [Locale('ar', 'SA')],
-        locale: const Locale('ar', 'SA'),
-        home: const LoginPage(),
-      ),
+      create: (context) => AccountingCubit(repository: repository),
+      child: const MobileAccApp(),
     ),
   );
+}
+
+class MobileAccApp extends StatelessWidget {
+  const MobileAccApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'نظام المحاسبة الاحترافي',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo, primary: const Color(0xFF00695C)),
+        scaffoldBackgroundColor: const Color(0xFFF4F7FC),
+        useMaterial3: true,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('ar', 'SA')],
+      locale: const Locale('ar', 'SA'),
+      home: const CustomSplashScreen(),
+    );
+  }
+}
+
+class CustomSplashScreen extends StatefulWidget {
+  const CustomSplashScreen({super.key});
+
+  @override
+  State<CustomSplashScreen> createState() => _CustomSplashScreenState();
+}
+
+class _CustomSplashScreenState extends State<CustomSplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _controller.forward();
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => const LoginPage(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 800),
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF00695C),
+      body: Center(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.account_balance_wallet, size: 80, color: Colors.white),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'نظام المحاسبة الذكي',
+                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MainAccountingPage extends StatelessWidget {
@@ -55,74 +140,35 @@ class MainAccountingPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'لوحة التحكم المالي',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text('لوحة التحكم المالي', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color(0xFF00695C),
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: BlocBuilder<AccountingCubit, AccountingState>(
         builder: (context, state) {
-          if (state is AccountingLoading)
-            return const Center(child: CircularProgressIndicator());
+          if (state is AccountingLoading) return const Center(child: CircularProgressIndicator());
           
           if (state is AccountingLoaded) {
             return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeaderStats(state),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text(
-                      "تحليل النشاط المالي",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
                   _buildChartsSection(state),
                   _buildQuickActions(context),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text(
-                      "إدارة البيانات",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
                   _buildManagementSection(context, state),
                   const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text(
-                      "دليل الحسابات",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
+                    child: Text("دليل الحسابات", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: state.accounts.length,
-                    itemBuilder: (context, index) {
-                      final account = state.accounts[index];
-                      return _buildEnhancedAccountCard(context, account);
-                    },
+                    itemBuilder: (context, index) => _buildEnhancedAccountCard(context, state.accounts[index]),
                   ),
                 ],
               ),
@@ -130,22 +176,14 @@ class MainAccountingPage extends StatelessWidget {
           }
           
           if (state is AccountingError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 60, color: Colors.red),
-                  const SizedBox(height: 12),
-                  Text(state.message, textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () =>
-                        context.read<AccountingCubit>().loadAccounts(),
-                    child: const Text('إعادة المحاولة'),
-                  ),
-                ],
-              ),
-            );
+            return Center(child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                Text(state.message),
+                ElevatedButton(onPressed: () => context.read<AccountingCubit>().loadAccounts(), child: const Text('إعادة المحاولة')),
+              ],
+            ));
           }
           return const Center(child: CircularProgressIndicator());
         },
@@ -155,25 +193,15 @@ class MainAccountingPage extends StatelessWidget {
 
   Widget _buildChartsSection(AccountingLoaded state) {
     return Container(
-      height: 400,
-      width: double.infinity,
+      height: 350,
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 25,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15)],
       ),
-      child: SummaryChartsWidget(
-        sales: state.totalSales,
-        purchases: state.totalPurchases,
-      ),
+      child: SummaryChartsWidget(sales: state.totalSales, purchases: state.totalPurchases),
     );
   }
 
@@ -182,212 +210,72 @@ class MainAccountingPage extends StatelessWidget {
       padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
-          _statCard(
-            "إجمالي المبيعات",
-            "${state.totalSales.toStringAsFixed(2)}",
-            Colors.green,
-            Icons.trending_up,
-          ),
+          _statCard("المبيعات", state.totalSales, Colors.green, Icons.trending_up),
           const SizedBox(width: 12),
-          _statCard(
-            "إجمالي المشتريات",
-            "${state.totalPurchases.toStringAsFixed(2)}",
-            Colors.redAccent,
-            Icons.trending_down,
-          ),
+          _statCard("المشتريات", state.totalPurchases, Colors.redAccent, Icons.trending_down),
         ],
       ),
     );
   }
 
-  Widget _statCard(String title, String value, Color color, IconData icon) {
+  Widget _statCard(String title, double value, Color color, IconData icon) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 10,
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-            Text(
-              "$value ج.م",
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: color, size: 20),
+          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          Text("${value.toStringAsFixed(2)} ج.م", style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14)),
+        ]),
       ),
     );
   }
 
   Widget _buildQuickActions(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: [
-          _actionCard(
-            context,
-            "الفواتير",
-            Icons.receipt_long,
-            Colors.teal,
-            const InvoicesPage(),
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ElevatedButton.icon(
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InvoicesPage())),
+        icon: const Icon(Icons.receipt_long),
+        label: const Text("سجل الفواتير"),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.teal.withValues(alpha: 0.1),
+          foregroundColor: Colors.teal,
+          minimumSize: const Size(double.infinity, 50),
+          elevation: 0,
+        ),
       ),
     );
   }
 
   Widget _buildManagementSection(BuildContext context, AccountingLoaded state) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: GridView.count(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: 3,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.9,
+      padding: const EdgeInsets.all(16),
+      child: Row(
         children: [
-          _managementCard(
-            context,
-            "العملاء",
-            Icons.people_alt,
-            const Color(0xFF00897B),
-            const CustomersPage(),
-            state.customerCount,
-          ),
-          _managementCard(
-            context,
-            "الموردين",
-            Icons.storefront,
-            const Color(0xFF1565C0),
-            const SuppliersPage(),
-            state.supplierCount,
-          ),
-          _managementCard(
-            context,
-            "المنتجات",
-            Icons.inventory_2,
-            const Color(0xFF6A1B9A),
-            const ProductsPage(),
-            state.productCount,
-          ),
+          _mCard(context, "العملاء", Icons.people, const Color(0xFF00897B), const CustomersPage(), state.customerCount),
+          const SizedBox(width: 12),
+          _mCard(context, "الموردين", Icons.store, const Color(0xFF1565C0), const SuppliersPage(), state.supplierCount),
+          const SizedBox(width: 12),
+          _mCard(context, "الأصناف", Icons.inventory, const Color(0xFF6A1B9A), const ProductsPage(), state.productCount),
         ],
       ),
     );
   }
 
-  Widget _managementCard(
-    BuildContext context,
-    String title,
-    IconData icon,
-    Color color,
-    Widget page,
-    int count,
-  ) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => page),
-        );
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-            ),
-          ],
-          border: Border.all(color: color.withValues(alpha: 0.1)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-            ),
-            Text(
-              "$count",
-              style: TextStyle(
-                color: color.withValues(alpha: 0.6),
-                fontSize: 11,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _actionCard(
-    BuildContext context,
-    String title,
-    IconData icon,
-    Color color,
-    Widget page,
-  ) {
+  Widget _mCard(BuildContext context, String t, IconData i, Color c, Widget p, int count) {
     return Expanded(
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => page),
-          );
-        },
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => p)),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(color: color, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+          child: Column(children: [
+            Icon(i, color: c),
+            Text(t, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            Text("$count", style: TextStyle(color: c.withValues(alpha: 0.7), fontSize: 14, fontWeight: FontWeight.bold)),
+          ]),
         ),
       ),
     );
@@ -395,53 +283,12 @@ class MainAccountingPage extends StatelessWidget {
 
   Widget _buildEnhancedAccountCard(BuildContext context, dynamic account) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        onTap: () => _showLastTransaction(context, account),
-        leading: CircleAvatar(
-          backgroundColor: const Color(0xFF00695C).withValues(alpha: 0.1),
-          child: const Icon(Icons.wallet, color: Color(0xFF00695C), size: 20),
-        ),
-        title: Text(
-          account.name,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
-        subtitle: Text(
-          "كود: ${account.code}",
-          style: const TextStyle(fontSize: 12),
-        ),
-        trailing: Text(
-          "${account.balance} ج.م",
-          style: const TextStyle(
-            color: Colors.green,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showLastTransaction(BuildContext context, dynamic account) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "آخر عملية: ${account.name}",
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
+        leading: CircleAvatar(backgroundColor: const Color(0xFF00695C).withValues(alpha: 0.1), child: const Icon(Icons.wallet, color: Color(0xFF00695C), size: 20)),
+        title: Text(account.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        trailing: Text("${account.balance} ج.م", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
       ),
     );
   }

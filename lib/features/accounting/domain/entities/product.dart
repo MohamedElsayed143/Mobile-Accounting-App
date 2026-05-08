@@ -7,6 +7,7 @@ class Product extends Equatable {
   final double buyPrice;
   final double sellPrice;
   final double quantity;
+  final double discount; // نسبة الخصم
 
   const Product({
     this.id,
@@ -15,6 +16,7 @@ class Product extends Equatable {
     this.buyPrice = 0.0,
     this.sellPrice = 0.0,
     this.quantity = 0.0,
+    this.discount = 0.0,
   });
 
   Product copyWith({
@@ -24,6 +26,7 @@ class Product extends Equatable {
     double? buyPrice,
     double? sellPrice,
     double? quantity,
+    double? discount,
   }) {
     return Product(
       id: id ?? this.id,
@@ -32,6 +35,7 @@ class Product extends Equatable {
       buyPrice: buyPrice ?? this.buyPrice,
       sellPrice: sellPrice ?? this.sellPrice,
       quantity: quantity ?? this.quantity,
+      discount: discount ?? this.discount,
     );
   }
 
@@ -42,6 +46,7 @@ class Product extends Equatable {
         'buyPrice': buyPrice,
         'sellPrice': sellPrice,
         'quantity': quantity,
+        'discount': discount,
       };
 
   factory Product.fromMap(Map<String, dynamic> map, {String? documentId}) => Product(
@@ -51,8 +56,9 @@ class Product extends Equatable {
         buyPrice: (map['buyPrice'] as num?)?.toDouble() ?? 0.0,
         sellPrice: (map['sellPrice'] as num?)?.toDouble() ?? 0.0,
         quantity: (map['quantity'] as num?)?.toDouble() ?? 0.0,
+        discount: (map['discount'] as num?)?.toDouble() ?? 0.0,
       );
 
   @override
-  List<Object?> get props => [id, code, name, buyPrice, sellPrice, quantity];
+  List<Object?> get props => [id, code, name, buyPrice, sellPrice, quantity, discount];
 }
