@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class JournalEntry extends Equatable {
-  final int? id;
+  final String? id;
   final String date;
   final String reference;
   final String description;
@@ -27,7 +27,7 @@ class JournalEntry extends Equatable {
   }
 
   JournalEntry copyWith({
-    int? id,
+    String? id,
     String? date,
     String? reference,
     String? description,
@@ -51,14 +51,36 @@ class JournalEntry extends Equatable {
     };
   }
 
+  // Adding toFirestore and fromFirestore for consistency
+  Map<String, dynamic> toFirestore() {
+    return {
+      'date': date,
+      'reference': reference,
+      'description': description,
+      'lines': lines.map((l) => l.toFirestore()).toList(),
+    };
+  }
+
+  factory JournalEntry.fromFirestore(Map<String, dynamic> map, String id) {
+    return JournalEntry(
+      id: id,
+      date: map['date'] ?? '',
+      reference: map['reference'] ?? '',
+      description: map['description'] ?? '',
+      lines: (map['lines'] as List? ?? [])
+          .map((l) => TransactionLine.fromFirestore(l as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
   @override
   List<Object?> get props => [id, date, reference, description, lines];
 }
 
 class TransactionLine extends Equatable {
-  final int? id;
-  final int? entryId;
-  final int accountId;
+  final String? id;
+  final String? entryId;
+  final String accountId;
   final double debit;
   final double credit;
   final String memo;
@@ -81,6 +103,24 @@ class TransactionLine extends Equatable {
       'credit': credit,
       'memo': memo,
     };
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'accountId': accountId,
+      'debit': debit,
+      'credit': credit,
+      'memo': memo,
+    };
+  }
+
+  factory TransactionLine.fromFirestore(Map<String, dynamic> map) {
+    return TransactionLine(
+      accountId: map['accountId'] ?? '',
+      debit: (map['debit'] ?? 0.0).toDouble(),
+      credit: (map['credit'] ?? 0.0).toDouble(),
+      memo: map['memo'] ?? '',
+    );
   }
 
   @override

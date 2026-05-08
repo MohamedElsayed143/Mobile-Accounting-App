@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_acc/main.dart';
-import '../../data/datasources/database_helper.dart';
+import 'package:mobile_acc/services/firebase_auth_service.dart';
+import 'package:mobile_acc/features/accounting/data/datasources/firestore_datasource.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,11 +12,14 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _nameController     = TextEditingController();
+  final _phoneController    = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLogin = true;
-  final _dbHelper = DatabaseHelper();
+
+  bool _isLogin   = true;
+  bool _isLoading = false;
+
+  final _authService = FirebaseAuthService();
 
   @override
   void dispose() {
@@ -36,54 +41,49 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const Icon(Icons.account_balance, size: 80, color: Color(0xFF00695C)),
               const SizedBox(height: 20),
-              Text(_isLogin ? "تسجيل الدخول" : "إنشاء حساب جديد",
-                  style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF00695C))),
+              Text(
+                _isLogin ? "تسجيل الدخول" : "إنشاء حساب جديد",
+                style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF00695C)),
+              ),
               const SizedBox(height: 30),
-              
+
               if (!_isLogin) ...[
-                // حقل الاسم (فقط في حالة التسجيل)
                 TextField(
                   controller: _nameController,
                   decoration: InputDecoration(
                     labelText: "الاسم الكامل",
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     prefixIcon: const Icon(Icons.person),
                   ),
                 ),
                 const SizedBox(height: 16),
               ],
 
-              // حقل رقم الموبايل
               TextField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
                   labelText: "رقم الموبايل",
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   prefixIcon: const Icon(Icons.phone_android),
                 ),
               ),
               const SizedBox(height: 16),
-              
-              // حقل كلمة المرور
+
               TextField(
                 controller: _passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: "كلمة المرور",
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   prefixIcon: const Icon(Icons.lock),
                 ),
               ),
               const SizedBox(height: 30),
-              
-              // زر الدخول / التسجيل
+
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -92,29 +92,43 @@ class _LoginPageState extends State<LoginPage> {
                       backgroundColor: const Color(0xFF00695C),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12))),
-                  onPressed: () {
-                    if (_isLogin) {
-                      _handleLogin();
-                    } else {
-                      _handleSignup();
-                    }
-                  },
-                  child: Text(_isLogin ? "دخول" : "تسجيل",
-                      style: const TextStyle(color: Colors.white, fontSize: 18)),
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          if (_isLogin) {
+                            _handleLogin();
+                          } else {
+                            _handleSignup();
+                          }
+                        },
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text(
+                          _isLogin ? "دخول" : "تسجيل",
+                          style: const TextStyle(color: Colors.white, fontSize: 18),
+                        ),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
-              // التبديل بين الدخول والتسجيل
+
               TextButton(
-                onPressed: () {
-                  setState(() {
-                    _isLogin = !_isLogin;
-                  });
-                },
+                onPressed: _isLoading
+                    ? null
+                    : () {
+                        setState(() {
+                          _isLogin = !_isLogin;
+                        });
+                      },
                 child: Text(
-                  _isLogin ? "ليس لديك حساب؟ سجل الآن" : "لديك حساب بالفعل؟ سجل دخول",
+                  _isLogin
+                      ? "ليس لديك حساب؟ سجل الآن"
+                      : "لديك حساب بالفعل؟ سجل دخول",
                   style: const TextStyle(color: Color(0xFF00695C)),
                 ),
               ),
@@ -126,83 +140,90 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _handleLogin() async {
-    final phone = _phoneController.text;
-    final password = _passwordController.text;
+    final phone    = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
 
     if (phone.isEmpty || password.isEmpty) {
       _showError('برجاء إدخال رقم الموبايل وكلمة المرور');
       return;
     }
-
     if (phone.length != 11) {
       _showError('رقم الموبايل يجب أن يكون 11 رقم');
       return;
     }
 
-    final user = await _dbHelper.loginUser(phone, password);
-    if (user != null) {
+    setState(() => _isLoading = true);
+    try {
+      await _authService.signIn(phone: phone, password: password);
       _navigateToHome();
-    } else {
-      _showError('رقم الموبايل أو كلمة المرور غير صحيحة');
+    } on FirebaseAuthException catch (e) {
+      _showError(FirebaseAuthService.getArabicError(e));
+    } catch (e) {
+      _showError('حدث خطأ غير متوقع: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _handleSignup() async {
-    final name = _nameController.text;
-    final phone = _phoneController.text;
-    final password = _passwordController.text;
+    final name     = _nameController.text.trim();
+    final phone    = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
 
     if (name.isEmpty || phone.isEmpty || password.isEmpty) {
       _showError('برجاء ملء جميع الحقول');
       return;
     }
-
     if (phone.length != 11) {
       _showError('رقم الموبايل يجب أن يكون 11 رقم');
       return;
     }
-
     if (password.length < 6) {
       _showError('كلمة المرور يجب أن لا تقل عن 6 أحرف');
       return;
     }
 
-    final exists = await _dbHelper.checkPhoneExists(phone);
-    if (exists) {
-      _showError('رقم الموبايل مسجل بالفعل');
-      return;
+    setState(() => _isLoading = true);
+    try {
+      await _authService.signUp(name: name, phone: phone, password: password);
+
+      // إضافة الحسابات المحاسبية الافتراضية للمستخدم الجديد
+      await FirestoreDataSource().insertInitialAccounts();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول'),
+          backgroundColor: Color(0xFF00695C),
+        ),
+      );
+      setState(() {
+        _isLogin = true;
+        _nameController.clear();
+        _phoneController.clear();
+        _passwordController.clear();
+      });
+    } on FirebaseAuthException catch (e) {
+      _showError(FirebaseAuthService.getArabicError(e));
+    } catch (e) {
+      _showError('حدث خطأ غير متوقع: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-
-    await _dbHelper.registerUser(name, phone, password);
-
-    // بعد التسجيل الناجح، ارجع لصفحة تسجيل الدخول
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول'),
-        backgroundColor: Color(0xFF00695C),
-      ),
-    );
-    setState(() {
-      _isLogin = true;
-      _nameController.clear();
-      _phoneController.clear();
-      _passwordController.clear();
-    });
   }
 
   void _showError(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
   void _navigateToHome() {
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (context) => const MainAccountingPage(),
-      ),
+      MaterialPageRoute(builder: (context) => const MainAccountingPage()),
     );
   }
 }

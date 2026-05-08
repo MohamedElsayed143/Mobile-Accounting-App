@@ -9,8 +9,8 @@ void main() {
         reference: 'JV001',
         description: 'Balanced Entry',
         lines: const [
-          TransactionLine(accountId: 1, debit: 100.0, credit: 0.0),
-          TransactionLine(accountId: 2, debit: 0.0, credit: 100.0),
+          TransactionLine(accountId: '1', debit: 100.0, credit: 0.0),
+          TransactionLine(accountId: '2', debit: 0.0, credit: 100.0),
         ],
       );
       expect(entry.isValid, isTrue);
@@ -22,8 +22,8 @@ void main() {
         reference: 'JV002',
         description: 'Unbalanced Entry',
         lines: const [
-          TransactionLine(accountId: 1, debit: 100.0, credit: 0.0),
-          TransactionLine(accountId: 2, debit: 0.0, credit: 50.0),
+          TransactionLine(accountId: '1', debit: 100.0, credit: 0.0),
+          TransactionLine(accountId: '2', debit: 0.0, credit: 50.0),
         ],
       );
       expect(entry.isValid, isFalse);

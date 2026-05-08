@@ -1,9 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
 enum AccountType { asset, liability, equity, income, expense }
 
 class Account extends Equatable {
-  final int? id;
+  final String? id;
   final String code;
   final String name;
   final AccountType type;
@@ -18,7 +19,7 @@ class Account extends Equatable {
   });
 
   Account copyWith({
-    int? id,
+    String? id,
     String? code,
     String? name,
     AccountType? type,
@@ -33,9 +34,8 @@ class Account extends Equatable {
     );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toFirestore() {
     return {
-      'id': id,
       'code': code,
       'name': name,
       'type': type.index,
@@ -43,13 +43,27 @@ class Account extends Equatable {
     };
   }
 
+  factory Account.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Account(
+      id: doc.id,
+      code: data['code'] ?? '',
+      name: data['name'] ?? '',
+      type: AccountType.values[data['type'] ?? 0],
+      balance: (data['balance'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  /// للتوافق مع الكود القديم
+  Map<String, dynamic> toMap() => toFirestore();
+
   factory Account.fromMap(Map<String, dynamic> map) {
     return Account(
-      id: map['id'],
-      code: map['code'],
-      name: map['name'],
-      type: AccountType.values[map['type']],
-      balance: map['balance'],
+      id: map['id']?.toString(),
+      code: map['code'] ?? '',
+      name: map['name'] ?? '',
+      type: AccountType.values[map['type'] ?? 0],
+      balance: (map['balance'] as num?)?.toDouble() ?? 0.0,
     );
   }
 

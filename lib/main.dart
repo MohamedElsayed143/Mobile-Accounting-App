@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_cubit.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_state.dart';
-import 'package:mobile_acc/features/accounting/data/repositories/sql_accounting_repository.dart';
+import 'package:mobile_acc/features/accounting/data/repositories/firestore_accounting_repository.dart';
 import 'package:mobile_acc/features/accounting/presentation/widgets/summary_charts_widget.dart';
 import 'package:mobile_acc/features/accounting/presentation/pages/login_page.dart';
 import 'package:mobile_acc/features/accounting/presentation/pages/invoices_page.dart';
@@ -12,26 +12,18 @@ import 'package:mobile_acc/features/accounting/presentation/pages/customers_page
 import 'package:mobile_acc/features/accounting/presentation/pages/suppliers_page.dart';
 import 'package:mobile_acc/features/accounting/presentation/pages/products_page.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
-import 'dart:io' show Platform;
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (kIsWeb) {
-    // تهيئة قاعدة البيانات للويب بدون الحاجة لملفات خارجية (Web Worker)
-    databaseFactory = createDatabaseFactoryFfiWeb();
-  } else if (Platform.isWindows || Platform.isLinux) {
-    // تهيئة قاعدة البيانات لسطح المكتب
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  }
-  final SqlAccountingRepository repository = SqlAccountingRepository();
+  // تهيئة Firebase
+  await Firebase.initializeApp();
+
+  final FirestoreAccountingRepository repository = FirestoreAccountingRepository();
 
   runApp(
     BlocProvider(
-      create: (context) => AccountingCubit(repository)..loadAccounts(),
+      create: (context) => AccountingCubit(repository),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'نظام المحاسبة',

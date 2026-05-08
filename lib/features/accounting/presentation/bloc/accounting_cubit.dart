@@ -5,25 +5,25 @@ import '../../domain/entities/invoice.dart';
 import '../../domain/entities/customer.dart';
 import '../../domain/entities/supplier.dart';
 import '../../domain/entities/product.dart';
-import '../../data/repositories/sql_accounting_repository.dart';
+import '../../domain/repositories/accounting_repository.dart';
 import 'accounting_state.dart';
 
 class AccountingCubit extends Cubit<AccountingState> {
-  final SqlAccountingRepository repository;
+  final IAccountingRepository repository;
 
   AccountingCubit(this.repository) : super(AccountingInitial());
 
-  // ─── Accounts ────────────────────────────────────────────────
+  // ─── Dashboard ───────────────────────────────────────────────
   Future<void> loadAccounts() async {
     emit(AccountingLoading());
     try {
-      final accounts = await repository.getAccounts();
-      final invoices = await repository.getInvoices();
-      final customers = await repository.getCustomers();
-      final suppliers = await repository.getSuppliers();
-      final products = await repository.getProducts();
+      final accounts   = await repository.getAccounts();
+      final invoices   = await repository.getInvoices();
+      final customers  = await repository.getCustomers();
+      final suppliers  = await repository.getSuppliers();
+      final products   = await repository.getProducts();
 
-      double totalSales = 0;
+      double totalSales     = 0;
       double totalPurchases = 0;
 
       for (var inv in invoices) {
@@ -36,11 +36,11 @@ class AccountingCubit extends Cubit<AccountingState> {
 
       emit(AccountingLoaded(
         accounts,
-        totalSales: totalSales,
+        totalSales:     totalSales,
         totalPurchases: totalPurchases,
-        customerCount: customers.length,
-        supplierCount: suppliers.length,
-        productCount: products.length,
+        customerCount:  customers.length,
+        supplierCount:  suppliers.length,
+        productCount:   products.length,
       ));
     } catch (e) {
       emit(AccountingError('فشل تحميل الحسابات: $e'));
@@ -61,7 +61,7 @@ class AccountingCubit extends Cubit<AccountingState> {
   Future<void> addInvoice(Invoice invoice) async {
     try {
       await repository.addInvoice(invoice);
-      debugPrint('✅ تم حفظ الفاتورة بنجاح');
+      debugPrint('✅ تم حفظ الفاتورة بنجاح في Firestore');
     } catch (e) {
       debugPrint('❌ Error adding invoice: $e');
       emit(AccountingError('فشل إضافة الفاتورة: $e'));
@@ -102,7 +102,7 @@ class AccountingCubit extends Cubit<AccountingState> {
     }
   }
 
-  Future<void> deleteCustomer(int id) async {
+  Future<void> deleteCustomer(String id) async {
     try {
       await repository.deleteCustomer(id);
       await loadCustomers();
@@ -135,7 +135,7 @@ class AccountingCubit extends Cubit<AccountingState> {
     }
   }
 
-  Future<void> deleteSupplier(int id) async {
+  Future<void> deleteSupplier(String id) async {
     try {
       await repository.deleteSupplier(id);
       await loadSuppliers();
@@ -168,7 +168,7 @@ class AccountingCubit extends Cubit<AccountingState> {
     }
   }
 
-  Future<void> deleteProduct(int id) async {
+  Future<void> deleteProduct(String id) async {
     try {
       await repository.deleteProduct(id);
       await loadProducts();

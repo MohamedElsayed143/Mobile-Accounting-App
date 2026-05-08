@@ -66,7 +66,7 @@ class _InvoicesPageState extends State<InvoicesPage>
           customers: customers,
           suppliers: suppliers,
           products: products,
-          accountId: accounts.first.id!,
+          accountId: accounts.first.id ?? '',
           onSave: (invoice) async {
             await cubit.addInvoice(invoice);
             messenger.showSnackBar(

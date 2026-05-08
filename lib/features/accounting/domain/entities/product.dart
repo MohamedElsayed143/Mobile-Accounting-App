@@ -1,7 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
 class Product extends Equatable {
-  final int? id;
+  final String? id;
   final String code;
   final String name;
   final double buyPrice;
@@ -18,7 +19,7 @@ class Product extends Equatable {
   });
 
   Product copyWith({
-    int? id,
+    String? id,
     String? code,
     String? name,
     double? buyPrice,
@@ -35,21 +36,37 @@ class Product extends Equatable {
     );
   }
 
-  Map<String, dynamic> toMap() => {
-        if (id != null) 'id': id,
+  Map<String, dynamic> toFirestore() => {
         'code': code,
         'name': name,
-        'buy_price': buyPrice,
-        'sell_price': sellPrice,
+        'buyPrice': buyPrice,
+        'sellPrice': sellPrice,
         'quantity': quantity,
       };
 
+  factory Product.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Product(
+      id: doc.id,
+      code: data['code'] ?? '',
+      name: data['name'] ?? '',
+      buyPrice: (data['buyPrice'] as num?)?.toDouble() ?? 0.0,
+      sellPrice: (data['sellPrice'] as num?)?.toDouble() ?? 0.0,
+      quantity: (data['quantity'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  /// للتوافق مع الكود القديم
+  Map<String, dynamic> toMap() => toFirestore();
+
   factory Product.fromMap(Map<String, dynamic> map) => Product(
-        id: map['id'],
+        id: map['id']?.toString(),
         code: map['code'] ?? '',
         name: map['name'] ?? '',
-        buyPrice: (map['buy_price'] as num?)?.toDouble() ?? 0.0,
-        sellPrice: (map['sell_price'] as num?)?.toDouble() ?? 0.0,
+        buyPrice: (map['buyPrice'] as num?)?.toDouble() ??
+            (map['buy_price'] as num?)?.toDouble() ?? 0.0,
+        sellPrice: (map['sellPrice'] as num?)?.toDouble() ??
+            (map['sell_price'] as num?)?.toDouble() ?? 0.0,
         quantity: (map['quantity'] as num?)?.toDouble() ?? 0.0,
       );
 

@@ -9,7 +9,7 @@ class SmartInvoiceDialog extends StatefulWidget {
   final List<Customer> customers;
   final List<Supplier> suppliers;
   final List<Product> products;
-  final int accountId;
+  final String accountId;
   final Function(Invoice) onSave;
 
   const SmartInvoiceDialog({

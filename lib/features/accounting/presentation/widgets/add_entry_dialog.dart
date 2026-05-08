@@ -37,7 +37,7 @@ class _AddEntryDialogState extends State<AddEntryDialog> {
   void _addLine({required bool isDebit}) {
     setState(() {
       _lines.add(TransactionLine(
-        accountId: widget.accounts.isNotEmpty ? widget.accounts.first.id! : 0,
+        accountId: widget.accounts.isNotEmpty ? widget.accounts.first.id ?? '' : '',
         debit: 0.0,
         credit: 0.0,
         memo: '',
@@ -181,8 +181,8 @@ class _AddEntryDialogState extends State<AddEntryDialog> {
               children: [
                 Expanded(
                   flex: 2,
-                  child: DropdownButtonFormField<int>(
-                    initialValue: line.accountId != 0 ? line.accountId : null,
+                  child: DropdownButtonFormField<String>(
+                    initialValue: line.accountId.isNotEmpty ? line.accountId : null,
                     decoration: const InputDecoration(labelText: 'الحساب', isDense: true),
                     items: widget.accounts.map((acc) {
                       return DropdownMenuItem(value: acc.id, child: Text(acc.name, style: const TextStyle(fontSize: 14)));
@@ -234,7 +234,7 @@ class _AddEntryDialogState extends State<AddEntryDialog> {
 
 // Extension to help with immutability in local state
 extension LineMapper on TransactionLine {
-  TransactionLine copyWithRepo({int? accountId, double? debit, double? credit}) {
+  TransactionLine copyWithRepo({String? accountId, double? debit, double? credit}) {
     return TransactionLine(
       id: id,
       entryId: entryId,
