@@ -1,44 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_cubit.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_state.dart';
-import 'package:mobile_acc/features/accounting/data/repositories/sql_accounting_repository.dart';
 import 'package:mobile_acc/features/accounting/data/repositories/firestore_accounting_repository.dart';
-import 'package:mobile_acc/features/accounting/presentation/widgets/summary_charts_widget.dart';
 import 'package:mobile_acc/features/accounting/presentation/pages/login_page.dart';
 import 'package:mobile_acc/features/accounting/presentation/pages/invoices_page.dart';
 import 'package:mobile_acc/features/accounting/presentation/pages/customers_page.dart';
 import 'package:mobile_acc/features/accounting/presentation/pages/suppliers_page.dart';
 import 'package:mobile_acc/features/accounting/presentation/pages/products_page.dart';
+import 'package:mobile_acc/features/accounting/presentation/widgets/summary_charts_widget.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
-import 'dart:io' show Platform;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
-  if (kIsWeb) {
-    // تهيئة قاعدة البيانات للويب بدون الحاجة لملفات خارجية (Web Worker)
-    databaseFactory = createDatabaseFactoryFfiWeb();
-  } else if (Platform.isWindows || Platform.isLinux) {
-    // تهيئة قاعدة البيانات لسطح المكتب
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  }
-  final SqlAccountingRepository localRepository = SqlAccountingRepository();
-  final FirestoreAccountingRepository remoteRepository = FirestoreAccountingRepository();
+  final FirestoreAccountingRepository repository = FirestoreAccountingRepository();
 
   runApp(
     BlocProvider(
       create: (context) => AccountingCubit(
-        localRepository: localRepository,
-        remoteRepository: remoteRepository,
-      )..loadAccounts(),
+        repository: repository,
+      ),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'نظام المحاسبة',
@@ -65,6 +50,8 @@ class MainAccountingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.read<AccountingCubit>().loadAccounts();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -85,9 +72,9 @@ class MainAccountingPage extends StatelessWidget {
       ),
       body: BlocBuilder<AccountingCubit, AccountingState>(
         builder: (context, state) {
-          // Dashboard state handling
           if (state is AccountingLoading)
             return const Center(child: CircularProgressIndicator());
+          
           if (state is AccountingLoaded) {
             return SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -106,7 +93,7 @@ class MainAccountingPage extends StatelessWidget {
                     ),
                   ),
                   _buildChartsSection(state),
-                  _buildQuickActions(context, state),
+                  _buildQuickActions(context),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text(
@@ -141,6 +128,7 @@ class MainAccountingPage extends StatelessWidget {
               ),
             );
           }
+          
           if (state is AccountingError) {
             return Center(
               child: Column(
@@ -148,7 +136,7 @@ class MainAccountingPage extends StatelessWidget {
                 children: [
                   const Icon(Icons.error_outline, size: 60, color: Colors.red),
                   const SizedBox(height: 12),
-                  Text((state).message, textAlign: TextAlign.center),
+                  Text(state.message, textAlign: TextAlign.center),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () =>
@@ -249,25 +237,17 @@ class MainAccountingPage extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickActions(BuildContext context, AccountingLoaded state) {
+  Widget _buildQuickActions(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
           _actionCard(
             context,
-            "فاتورة بيع",
-            Icons.add_shopping_cart,
+            "الفواتير",
+            Icons.receipt_long,
             Colors.teal,
-            InvoiceType.sale,
-          ),
-          const SizedBox(width: 12),
-          _actionCard(
-            context,
-            "فاتورة شراء",
-            Icons.inventory,
-            Colors.blueGrey,
-            InvoiceType.purchase,
+            const InvoicesPage(),
           ),
         ],
       ),
@@ -323,14 +303,11 @@ class MainAccountingPage extends StatelessWidget {
     int count,
   ) {
     return InkWell(
-      onTap: () async {
-        await Navigator.push(
+      onTap: () {
+        Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => page),
         );
-        if (context.mounted) {
-          context.read<AccountingCubit>().loadAccounts();
-        }
       },
       borderRadius: BorderRadius.circular(16),
       child: Container(
@@ -383,19 +360,15 @@ class MainAccountingPage extends StatelessWidget {
     String title,
     IconData icon,
     Color color,
-    InvoiceType type,
+    Widget page,
   ) {
     return Expanded(
       child: InkWell(
-        onTap: () async {
-          await Navigator.push(
+        onTap: () {
+          Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const InvoicesPage()),
+            MaterialPageRoute(builder: (context) => page),
           );
-          // بعد الرجوع من صفحة الفواتير، نعيد تحميل الحسابات لتحديث الداشبورد
-          if (context.mounted) {
-            context.read<AccountingCubit>().loadAccounts();
-          }
         },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),

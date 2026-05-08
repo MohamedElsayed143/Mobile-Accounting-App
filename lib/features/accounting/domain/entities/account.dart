@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 enum AccountType { asset, liability, equity, income, expense }
 
 class Account extends Equatable {
-  final int? id;
+  final String? id;
   final String code;
   final String name;
   final AccountType type;
@@ -18,7 +18,7 @@ class Account extends Equatable {
   });
 
   Account copyWith({
-    int? id,
+    String? id,
     String? code,
     String? name,
     AccountType? type,
@@ -43,13 +43,13 @@ class Account extends Equatable {
     };
   }
 
-  factory Account.fromMap(Map<String, dynamic> map) {
+  factory Account.fromMap(Map<String, dynamic> map, {String? documentId}) {
     return Account(
-      id: map['id'],
-      code: map['code'],
-      name: map['name'],
-      type: AccountType.values[map['type']],
-      balance: map['balance'],
+      id: documentId ?? map['id']?.toString(),
+      code: map['code'] ?? '',
+      name: map['name'] ?? '',
+      type: AccountType.values[map['type'] ?? 0],
+      balance: (map['balance'] as num?)?.toDouble() ?? 0.0,
     );
   }
 

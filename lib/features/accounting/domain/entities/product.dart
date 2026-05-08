@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class Product extends Equatable {
-  final int? id;
+  final String? id;
   final String code;
   final String name;
   final double buyPrice;
@@ -18,7 +18,7 @@ class Product extends Equatable {
   });
 
   Product copyWith({
-    int? id,
+    String? id,
     String? code,
     String? name,
     double? buyPrice,
@@ -36,20 +36,20 @@ class Product extends Equatable {
   }
 
   Map<String, dynamic> toMap() => {
-        if (id != null) 'id': id,
+        'id': id,
         'code': code,
         'name': name,
-        'buy_price': buyPrice,
-        'sell_price': sellPrice,
+        'buyPrice': buyPrice,
+        'sellPrice': sellPrice,
         'quantity': quantity,
       };
 
-  factory Product.fromMap(Map<String, dynamic> map) => Product(
-        id: map['id'],
+  factory Product.fromMap(Map<String, dynamic> map, {String? documentId}) => Product(
+        id: documentId ?? map['id']?.toString(),
         code: map['code'] ?? '',
         name: map['name'] ?? '',
-        buyPrice: (map['buy_price'] as num?)?.toDouble() ?? 0.0,
-        sellPrice: (map['sell_price'] as num?)?.toDouble() ?? 0.0,
+        buyPrice: (map['buyPrice'] as num?)?.toDouble() ?? 0.0,
+        sellPrice: (map['sellPrice'] as num?)?.toDouble() ?? 0.0,
         quantity: (map['quantity'] as num?)?.toDouble() ?? 0.0,
       );
 

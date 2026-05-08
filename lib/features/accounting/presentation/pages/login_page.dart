@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_acc/main.dart';
-import '../../data/datasources/database_helper.dart';
+import 'package:mobile_acc/services/firebase_auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,7 +15,8 @@ class _LoginPageState extends State<LoginPage> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLogin = true;
-  final _dbHelper = DatabaseHelper();
+  bool _isLoading = false;
+  final _authService = FirebaseAuthService();
 
   @override
   void dispose() {
@@ -44,7 +46,6 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 30),
               
               if (!_isLogin) ...[
-                // حقل الاسم (فقط في حالة التسجيل)
                 TextField(
                   controller: _nameController,
                   decoration: InputDecoration(
@@ -57,7 +58,6 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 16),
               ],
 
-              // حقل رقم الموبايل
               TextField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
@@ -70,7 +70,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 16),
               
-              // حقل كلمة المرور
               TextField(
                 controller: _passwordController,
                 obscureText: true,
@@ -83,7 +82,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 30),
               
-              // زر الدخول / التسجيل
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -92,23 +90,24 @@ class _LoginPageState extends State<LoginPage> {
                       backgroundColor: const Color(0xFF00695C),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12))),
-                  onPressed: () {
+                  onPressed: _isLoading ? null : () {
                     if (_isLogin) {
                       _handleLogin();
                     } else {
                       _handleSignup();
                     }
                   },
-                  child: Text(_isLogin ? "دخول" : "تسجيل",
+                  child: _isLoading 
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(_isLogin ? "دخول" : "تسجيل",
                       style: const TextStyle(color: Colors.white, fontSize: 18)),
                 ),
               ),
               
               const SizedBox(height: 16),
               
-              // التبديل بين الدخول والتسجيل
               TextButton(
-                onPressed: () {
+                onPressed: _isLoading ? null : () {
                   setState(() {
                     _isLogin = !_isLogin;
                   });
@@ -126,8 +125,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _handleLogin() async {
-    final phone = _phoneController.text;
-    final password = _passwordController.text;
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
 
     if (phone.isEmpty || password.isEmpty) {
       _showError('برجاء إدخال رقم الموبايل وكلمة المرور');
@@ -139,18 +138,23 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final user = await _dbHelper.loginUser(phone, password);
-    if (user != null) {
+    setState(() => _isLoading = true);
+    try {
+      await _authService.signIn(phone: phone, password: password);
       _navigateToHome();
-    } else {
-      _showError('رقم الموبايل أو كلمة المرور غير صحيحة');
+    } on FirebaseAuthException catch (e) {
+      _showError(FirebaseAuthService.getArabicError(e));
+    } catch (e) {
+      _showError('حدث خطأ غير متوقع');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _handleSignup() async {
-    final name = _nameController.text;
-    final phone = _phoneController.text;
-    final password = _passwordController.text;
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
 
     if (name.isEmpty || phone.isEmpty || password.isEmpty) {
       _showError('برجاء ملء جميع الحقول');
@@ -167,37 +171,40 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final exists = await _dbHelper.checkPhoneExists(phone);
-    if (exists) {
-      _showError('رقم الموبايل مسجل بالفعل');
-      return;
+    setState(() => _isLoading = true);
+    try {
+      await _authService.signUp(name: name, phone: phone, password: password);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول'),
+          backgroundColor: Color(0xFF00695C),
+        ),
+      );
+      setState(() {
+        _isLogin = true;
+        _nameController.clear();
+        _phoneController.clear();
+        _passwordController.clear();
+      });
+    } on FirebaseAuthException catch (e) {
+      _showError(FirebaseAuthService.getArabicError(e));
+    } catch (e) {
+      _showError('حدث خطأ غير متوقع');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-
-    await _dbHelper.registerUser(name, phone, password);
-
-    // بعد التسجيل الناجح، ارجع لصفحة تسجيل الدخول
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول'),
-        backgroundColor: Color(0xFF00695C),
-      ),
-    );
-    setState(() {
-      _isLogin = true;
-      _nameController.clear();
-      _phoneController.clear();
-      _passwordController.clear();
-    });
   }
 
   void _showError(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
   void _navigateToHome() {
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(

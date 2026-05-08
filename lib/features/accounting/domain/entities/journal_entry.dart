@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class JournalEntry extends Equatable {
-  final int? id;
+  final String? id;
   final String date;
   final String reference;
   final String description;
@@ -22,12 +22,11 @@ class JournalEntry extends Equatable {
       totalDebit += line.debit;
       totalCredit += line.credit;
     }
-    // Handle floating point precision issues with a small epsilon
     return (totalDebit - totalCredit).abs() < 0.001 && lines.isNotEmpty;
   }
 
   JournalEntry copyWith({
-    int? id,
+    String? id,
     String? date,
     String? reference,
     String? description,
@@ -51,14 +50,26 @@ class JournalEntry extends Equatable {
     };
   }
 
+  factory JournalEntry.fromMap(Map<String, dynamic> map, {String? documentId}) {
+    return JournalEntry(
+      id: documentId ?? map['id']?.toString(),
+      date: map['date'] ?? '',
+      reference: map['reference'] ?? '',
+      description: map['description'] ?? '',
+      lines: (map['lines'] as List? ?? [])
+          .map((l) => TransactionLine.fromMap(l as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
   @override
   List<Object?> get props => [id, date, reference, description, lines];
 }
 
 class TransactionLine extends Equatable {
-  final int? id;
-  final int? entryId;
-  final int accountId;
+  final String? id;
+  final String? entryId;
+  final String accountId;
   final double debit;
   final double credit;
   final String memo;
@@ -75,12 +86,23 @@ class TransactionLine extends Equatable {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'entry_id': entryId,
-      'account_id': accountId,
+      'entryId': entryId,
+      'accountId': accountId,
       'debit': debit,
       'credit': credit,
       'memo': memo,
     };
+  }
+
+  factory TransactionLine.fromMap(Map<String, dynamic> map) {
+    return TransactionLine(
+      id: map['id']?.toString(),
+      entryId: map['entryId']?.toString(),
+      accountId: map['accountId']?.toString() ?? '',
+      debit: (map['debit'] as num?)?.toDouble() ?? 0.0,
+      credit: (map['credit'] as num?)?.toDouble() ?? 0.0,
+      memo: map['memo'] ?? '',
+    );
   }
 
   @override

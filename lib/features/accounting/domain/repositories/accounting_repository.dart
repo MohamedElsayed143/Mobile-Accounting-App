@@ -8,6 +8,8 @@ abstract class IAccountingRepository {
   // Accounts
   Stream<List<Account>> getAccounts();
   Future<void> addAccount(Account account);
+  Future<void> updateAccount(Account account);
+  Future<void> deleteAccount(String id);
 
   // Invoices
   Future<void> addInvoice(Invoice invoice);
@@ -18,17 +20,17 @@ abstract class IAccountingRepository {
   Stream<List<Customer>> getCustomers();
   Future<void> addCustomer(Customer customer);
   Future<void> updateCustomer(Customer customer);
-  Future<void> deleteCustomer(int id);
+  Future<void> deleteCustomer(String id);
 
   // Suppliers
   Stream<List<Supplier>> getSuppliers();
   Future<void> addSupplier(Supplier supplier);
   Future<void> updateSupplier(Supplier supplier);
-  Future<void> deleteSupplier(int id);
+  Future<void> deleteSupplier(String id);
 
   // Products
   Stream<List<Product>> getProducts();
   Future<void> addProduct(Product product);
   Future<void> updateProduct(Product product);
-  Future<void> deleteProduct(int id);
+  Future<void> deleteProduct(String id);
 }

@@ -44,11 +44,11 @@ class _InvoicesPageState extends State<InvoicesPage>
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
 
-    // جلب البيانات المطلوبة للفاتورة
-    final accounts = await cubit.localRepository.getAccounts().first;
-    final customers = await cubit.localRepository.getCustomers().first;
-    final suppliers = await cubit.localRepository.getSuppliers().first;
-    final products = await cubit.localRepository.getProducts().first;
+    // جلب البيانات المطلوبة للفاتورة من المستودع الموحد
+    final accounts = await cubit.repository.getAccounts().first;
+    final customers = await cubit.repository.getCustomers().first;
+    final suppliers = await cubit.repository.getSuppliers().first;
+    final products = await cubit.repository.getProducts().first;
 
     if (!mounted) return;
 
@@ -167,8 +167,8 @@ class _InvoiceListView extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 color: type == InvoiceType.sale
-                    ? Colors.teal.withValues(alpha: 0.1)
-                    : Colors.blueGrey.withValues(alpha: 0.1),
+                    ? Colors.teal.withOpacity(0.1)
+                    : Colors.blueGrey.withOpacity(0.1),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -215,7 +215,7 @@ class _InvoiceCard extends StatelessWidget {
       elevation: 2,
       child: ExpansionTile(
         leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: 0.12),
+          backgroundColor: color.withOpacity(0.12),
           child: Icon(isSale ? Icons.trending_up : Icons.trending_down, color: color, size: 20),
         ),
         title: Text(invoice.partyName,

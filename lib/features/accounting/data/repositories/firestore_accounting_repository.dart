@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/account.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/customer.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
@@ -8,44 +9,60 @@ import 'package:mobile_acc/features/accounting/domain/repositories/accounting_re
 
 class FirestoreAccountingRepository implements IAccountingRepository {
   final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
 
-  FirestoreAccountingRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  FirestoreAccountingRepository({FirebaseFirestore? firestore, FirebaseAuth? auth})
+      : _firestore = firestore ?? FirebaseFirestore.instance,
+        _auth = auth ?? FirebaseAuth.instance;
+
+  String get _userId => _auth.currentUser?.uid ?? 'anonymous';
+
+  CollectionReference get _accounts => _firestore.collection('users').doc(_userId).collection('accounts');
+  CollectionReference get _customers => _firestore.collection('users').doc(_userId).collection('customers');
+  CollectionReference get _suppliers => _firestore.collection('users').doc(_userId).collection('suppliers');
+  CollectionReference get _products => _firestore.collection('users').doc(_userId).collection('products');
+  CollectionReference get _invoices => _firestore.collection('users').doc(_userId).collection('invoices');
 
   // ─── Accounts ────────────────────────────────────────────────
   @override
   Stream<List<Account>> getAccounts() {
-    return _firestore.collection('accounts').snapshots().map(
-      (snapshot) => snapshot.docs.map((doc) => Account.fromMap(doc.data())).toList(),
+    return _accounts.snapshots().map(
+      (s) => s.docs.map((d) => Account.fromMap(d.data() as Map<String, dynamic>, documentId: d.id)).toList(),
     );
   }
 
   @override
   Future<void> addAccount(Account account) async {
-    // If account has an ID (e.g. from local DB), use it as document ID
+    await _accounts.add(account.toMap());
+  }
+
+  @override
+  Future<void> updateAccount(Account account) async {
     if (account.id != null) {
-      await _firestore.collection('accounts').doc(account.id.toString()).set(account.toMap());
-    } else {
-      await _firestore.collection('accounts').add(account.toMap());
+      await _accounts.doc(account.id).update(account.toMap());
     }
+  }
+
+  @override
+  Future<void> deleteAccount(String id) async {
+    await _accounts.doc(id).delete();
   }
 
   // ─── Invoices ────────────────────────────────────────────────
   @override
   Future<void> addInvoice(Invoice invoice) async {
-    // Since Invoice doesn't have an ID field in the provided entity, we use its invoiceNumber
-    await _firestore.collection('invoices').doc(invoice.invoiceNumber).set(invoice.toMap());
+    await _invoices.doc(invoice.invoiceNumber).set(invoice.toMap());
   }
 
   @override
   Stream<List<Invoice>> getInvoices({String? type}) {
-    Query query = _firestore.collection('invoices');
+    Query query = _invoices;
     if (type != null) {
       int typeIndex = type == 'sale' ? 0 : 1;
       query = query.where('type', isEqualTo: typeIndex);
     }
     return query.snapshots().map(
-      (snapshot) => snapshot.docs.map((doc) => Invoice.fromMap(doc.data() as Map<String, dynamic>)).toList(),
+      (s) => s.docs.map((d) => Invoice.fromMap(d.data() as Map<String, dynamic>, documentId: d.id)).toList(),
     );
   }
 
@@ -57,87 +74,75 @@ class FirestoreAccountingRepository implements IAccountingRepository {
   // ─── Customers ────────────────────────────────────────────────
   @override
   Stream<List<Customer>> getCustomers() {
-    return _firestore.collection('customers').snapshots().map(
-      (snapshot) => snapshot.docs.map((doc) => Customer.fromMap(doc.data())).toList(),
+    return _customers.snapshots().map(
+      (s) => s.docs.map((d) => Customer.fromMap(d.data() as Map<String, dynamic>, documentId: d.id)).toList(),
     );
   }
 
   @override
   Future<void> addCustomer(Customer customer) async {
-    if (customer.id != null) {
-      await _firestore.collection('customers').doc(customer.id.toString()).set(customer.toMap());
-    } else {
-      await _firestore.collection('customers').add(customer.toMap());
-    }
+    await _customers.add(customer.toMap());
   }
 
   @override
   Future<void> updateCustomer(Customer customer) async {
     if (customer.id != null) {
-      await _firestore.collection('customers').doc(customer.id.toString()).update(customer.toMap());
+      await _customers.doc(customer.id).update(customer.toMap());
     }
   }
 
   @override
-  Future<void> deleteCustomer(int id) async {
-    await _firestore.collection('customers').doc(id.toString()).delete();
+  Future<void> deleteCustomer(String id) async {
+    await _customers.doc(id).delete();
   }
 
   // ─── Suppliers ────────────────────────────────────────────────
   @override
   Stream<List<Supplier>> getSuppliers() {
-    return _firestore.collection('suppliers').snapshots().map(
-      (snapshot) => snapshot.docs.map((doc) => Supplier.fromMap(doc.data())).toList(),
+    return _suppliers.snapshots().map(
+      (s) => s.docs.map((d) => Supplier.fromMap(d.data() as Map<String, dynamic>, documentId: d.id)).toList(),
     );
   }
 
   @override
   Future<void> addSupplier(Supplier supplier) async {
-    if (supplier.id != null) {
-      await _firestore.collection('suppliers').doc(supplier.id.toString()).set(supplier.toMap());
-    } else {
-      await _firestore.collection('suppliers').add(supplier.toMap());
-    }
+    await _suppliers.add(supplier.toMap());
   }
 
   @override
   Future<void> updateSupplier(Supplier supplier) async {
     if (supplier.id != null) {
-      await _firestore.collection('suppliers').doc(supplier.id.toString()).update(supplier.toMap());
+      await _suppliers.doc(supplier.id).update(supplier.toMap());
     }
   }
 
   @override
-  Future<void> deleteSupplier(int id) async {
-    await _firestore.collection('suppliers').doc(id.toString()).delete();
+  Future<void> deleteSupplier(String id) async {
+    await _suppliers.doc(id).delete();
   }
 
   // ─── Products ────────────────────────────────────────────────
   @override
   Stream<List<Product>> getProducts() {
-    return _firestore.collection('products').snapshots().map(
-      (snapshot) => snapshot.docs.map((doc) => Product.fromMap(doc.data())).toList(),
+    return _products.snapshots().map(
+      (s) => s.docs.map((d) => Product.fromMap(d.data() as Map<String, dynamic>, documentId: d.id)).toList(),
     );
   }
 
   @override
   Future<void> addProduct(Product product) async {
-    if (product.id != null) {
-      await _firestore.collection('products').doc(product.id.toString()).set(product.toMap());
-    } else {
-      await _firestore.collection('products').add(product.toMap());
-    }
+    await _products.add(product.toMap());
   }
 
   @override
   Future<void> updateProduct(Product product) async {
     if (product.id != null) {
-      await _firestore.collection('products').doc(product.id.toString()).update(product.toMap());
+      await _products.doc(product.id).update(product.toMap());
     }
   }
 
   @override
-  Future<void> deleteProduct(int id) async {
-    await _firestore.collection('products').doc(id.toString()).delete();
+  Future<void> deleteProduct(String id) async {
+    await _products.doc(id).delete();
   }
 }

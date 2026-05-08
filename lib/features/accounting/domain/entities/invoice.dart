@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 enum InvoiceType { sale, purchase }
 
 class InvoiceItem extends Equatable {
-  final int? productId;
+  final String? productId;
   final String description;
   final double quantity;
   final double price;
@@ -15,44 +15,39 @@ class InvoiceItem extends Equatable {
     required this.price,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'product_id': productId,
-      'description': description,
-      'quantity': quantity,
-      'price': price,
-    };
-  }
-
-  factory InvoiceItem.fromMap(Map<String, dynamic> map) {
-    return InvoiceItem(
-      productId: map['product_id'],
-      description: map['description'] ?? '',
-      quantity: (map['quantity'] as num?)?.toDouble() ?? 0.0,
-      price: (map['price'] as num?)?.toDouble() ?? 0.0,
-    );
-  }
-
   double get total => quantity * price;
+
+  Map<String, dynamic> toMap() => {
+        'productId': productId,
+        'description': description,
+        'quantity': quantity,
+        'price': price,
+      };
+
+  factory InvoiceItem.fromMap(Map<String, dynamic> map) => InvoiceItem(
+        productId: map['productId']?.toString(),
+        description: map['description'] ?? '',
+        quantity: (map['quantity'] as num?)?.toDouble() ?? 0.0,
+        price: (map['price'] as num?)?.toDouble() ?? 0.0,
+      );
 
   @override
   List<Object?> get props => [productId, description, quantity, price];
 }
 
 class Invoice extends Equatable {
+  final String? id;
   final String invoiceNumber;
   final String date;
-  /// اسم الطرف (عميل أو مورد) للعرض
-  final String partyName;
-  /// معرّف العميل (فاتورة بيع)
-  final int? customerId;
-  /// معرّف المورد (فاتورة شراء)
-  final int? supplierId;
+  final String partyName; // Customer or Supplier Name
+  final String? customerId;
+  final String? supplierId;
   final List<InvoiceItem> items;
   final InvoiceType type;
-  final int accountId;
+  final String? accountId;
 
   const Invoice({
+    this.id,
     required this.invoiceNumber,
     required this.date,
     required this.partyName,
@@ -60,40 +55,47 @@ class Invoice extends Equatable {
     this.supplierId,
     required this.items,
     required this.type,
-    required this.accountId,
+    this.accountId,
   });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'invoice_number': invoiceNumber,
-      'date': date,
-      'party_name': partyName,
-      'customer_id': customerId,
-      'supplier_id': supplierId,
-      'type': type.index,
-      'account_id': accountId,
-      'items': items.map((x) => x.toMap()).toList(),
-    };
-  }
-
-  factory Invoice.fromMap(Map<String, dynamic> map) {
-    return Invoice(
-      invoiceNumber: map['invoice_number'] ?? '',
-      date: map['date'] ?? '',
-      partyName: map['party_name'] ?? '',
-      customerId: map['customer_id'],
-      supplierId: map['supplier_id'],
-      type: InvoiceType.values[map['type'] ?? 0],
-      accountId: map['account_id'] ?? 0,
-      items: List<InvoiceItem>.from(
-        (map['items'] as List? ?? []).map((x) => InvoiceItem.fromMap(x)),
-      ),
-    );
-  }
 
   double get totalAmount => items.fold(0, (sum, item) => sum + item.total);
 
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'invoiceNumber': invoiceNumber,
+        'date': date,
+        'partyName': partyName,
+        'customerId': customerId,
+        'supplierId': supplierId,
+        'items': items.map((i) => i.toMap()).toList(),
+        'type': type.index,
+        'accountId': accountId,
+      };
+
+  factory Invoice.fromMap(Map<String, dynamic> map, {String? documentId}) => Invoice(
+        id: documentId ?? map['id']?.toString(),
+        invoiceNumber: map['invoiceNumber'] ?? '',
+        date: map['date'] ?? '',
+        partyName: map['partyName'] ?? '',
+        customerId: map['customerId']?.toString(),
+        supplierId: map['supplierId']?.toString(),
+        items: (map['items'] as List? ?? [])
+            .map((i) => InvoiceItem.fromMap(i as Map<String, dynamic>))
+            .toList(),
+        type: InvoiceType.values[map['type'] ?? 0],
+        accountId: map['accountId']?.toString(),
+      );
+
   @override
-  List<Object?> get props =>
-      [invoiceNumber, date, partyName, customerId, supplierId, items, type, accountId];
+  List<Object?> get props => [
+        id,
+        invoiceNumber,
+        date,
+        partyName,
+        customerId,
+        supplierId,
+        items,
+        type,
+        accountId
+      ];
 }

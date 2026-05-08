@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class Supplier extends Equatable {
-  final int? id;
+  final String? id;
   final String name;
   final String phone;
   final String email;
@@ -18,7 +18,7 @@ class Supplier extends Equatable {
   });
 
   Supplier copyWith({
-    int? id,
+    String? id,
     String? name,
     String? phone,
     String? email,
@@ -36,7 +36,7 @@ class Supplier extends Equatable {
   }
 
   Map<String, dynamic> toMap() => {
-        if (id != null) 'id': id,
+        'id': id,
         'name': name,
         'phone': phone,
         'email': email,
@@ -44,8 +44,8 @@ class Supplier extends Equatable {
         'balance': balance,
       };
 
-  factory Supplier.fromMap(Map<String, dynamic> map) => Supplier(
-        id: map['id'],
+  factory Supplier.fromMap(Map<String, dynamic> map, {String? documentId}) => Supplier(
+        id: documentId ?? map['id']?.toString(),
         name: map['name'] ?? '',
         phone: map['phone'] ?? '',
         email: map['email'] ?? '',
