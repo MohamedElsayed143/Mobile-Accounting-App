@@ -3,6 +3,7 @@ import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/customer.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/supplier.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/product.dart';
+import 'package:mobile_acc/core/error/failures.dart';
 
 abstract class AccountingState {}
 
@@ -54,6 +55,8 @@ class OperationSuccess extends AccountingState {
 }
 
 class AccountingError extends AccountingState {
-  final String message;
-  AccountingError(this.message);
+  final Failure failure;
+  AccountingError(this.failure);
+
+  String get message => failure.message;
 }

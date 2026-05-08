@@ -11,10 +11,10 @@ class SqlAccountingRepository implements IAccountingRepository {
 
   // ─── Accounts ────────────────────────────────────────────────
   @override
-  Future<List<Account>> getAccounts() async {
+  Stream<List<Account>> getAccounts() async* {
     final db = await dbHelper.database;
     final maps = await db.query('accounts');
-    return maps.map((e) => Account.fromMap(e)).toList();
+    yield maps.map((e) => Account.fromMap(e)).toList();
   }
 
   @override
@@ -52,7 +52,7 @@ class SqlAccountingRepository implements IAccountingRepository {
   }
 
   @override
-  Future<List<Invoice>> getInvoices({String? type}) async {
+  Stream<List<Invoice>> getInvoices({String? type}) async* {
     final maps = await dbHelper.getInvoices(type: type);
     final List<Invoice> invoices = [];
     for (var map in maps) {
@@ -76,7 +76,7 @@ class SqlAccountingRepository implements IAccountingRepository {
         accountId: map['account_id'] ?? 0,
       ));
     }
-    return invoices;
+    yield invoices;
   }
 
   @override
@@ -84,9 +84,9 @@ class SqlAccountingRepository implements IAccountingRepository {
 
   // ─── Customers ────────────────────────────────────────────────
   @override
-  Future<List<Customer>> getCustomers() async {
+  Stream<List<Customer>> getCustomers() async* {
     final maps = await dbHelper.getCustomers();
-    return maps.map((e) => Customer.fromMap(e)).toList();
+    yield maps.map((e) => Customer.fromMap(e)).toList();
   }
 
   @override
@@ -106,9 +106,9 @@ class SqlAccountingRepository implements IAccountingRepository {
 
   // ─── Suppliers ────────────────────────────────────────────────
   @override
-  Future<List<Supplier>> getSuppliers() async {
+  Stream<List<Supplier>> getSuppliers() async* {
     final maps = await dbHelper.getSuppliers();
-    return maps.map((e) => Supplier.fromMap(e)).toList();
+    yield maps.map((e) => Supplier.fromMap(e)).toList();
   }
 
   @override
@@ -128,9 +128,9 @@ class SqlAccountingRepository implements IAccountingRepository {
 
   // ─── Products ────────────────────────────────────────────────
   @override
-  Future<List<Product>> getProducts() async {
+  Stream<List<Product>> getProducts() async* {
     final maps = await dbHelper.getProducts();
-    return maps.map((e) => Product.fromMap(e)).toList();
+    yield maps.map((e) => Product.fromMap(e)).toList();
   }
 
   @override

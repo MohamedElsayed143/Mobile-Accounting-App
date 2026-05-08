@@ -15,6 +15,24 @@ class InvoiceItem extends Equatable {
     required this.price,
   });
 
+  Map<String, dynamic> toMap() {
+    return {
+      'product_id': productId,
+      'description': description,
+      'quantity': quantity,
+      'price': price,
+    };
+  }
+
+  factory InvoiceItem.fromMap(Map<String, dynamic> map) {
+    return InvoiceItem(
+      productId: map['product_id'],
+      description: map['description'] ?? '',
+      quantity: (map['quantity'] as num?)?.toDouble() ?? 0.0,
+      price: (map['price'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
   double get total => quantity * price;
 
   @override
@@ -44,6 +62,34 @@ class Invoice extends Equatable {
     required this.type,
     required this.accountId,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'invoice_number': invoiceNumber,
+      'date': date,
+      'party_name': partyName,
+      'customer_id': customerId,
+      'supplier_id': supplierId,
+      'type': type.index,
+      'account_id': accountId,
+      'items': items.map((x) => x.toMap()).toList(),
+    };
+  }
+
+  factory Invoice.fromMap(Map<String, dynamic> map) {
+    return Invoice(
+      invoiceNumber: map['invoice_number'] ?? '',
+      date: map['date'] ?? '',
+      partyName: map['party_name'] ?? '',
+      customerId: map['customer_id'],
+      supplierId: map['supplier_id'],
+      type: InvoiceType.values[map['type'] ?? 0],
+      accountId: map['account_id'] ?? 0,
+      items: List<InvoiceItem>.from(
+        (map['items'] as List? ?? []).map((x) => InvoiceItem.fromMap(x)),
+      ),
+    );
+  }
 
   double get totalAmount => items.fold(0, (sum, item) => sum + item.total);
 

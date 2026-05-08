@@ -1,9 +1,11 @@
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+apply plugin: 'com.google.gms.google-services'
 
 android {
     namespace = "com.antigravity.mobileacc.mobile_acc"
@@ -41,4 +43,10 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // ... existing dependencies
+    implementation 'com.google.firebase:firebase-bom:34.0.0'
+    implementation 'com.google.firebase:firebase-analytics'
 }

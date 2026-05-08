@@ -45,10 +45,10 @@ class _InvoicesPageState extends State<InvoicesPage>
     final nav = Navigator.of(context);
 
     // جلب البيانات المطلوبة للفاتورة
-    final accounts = await cubit.repository.getAccounts();
-    final customers = await cubit.repository.getCustomers();
-    final suppliers = await cubit.repository.getSuppliers();
-    final products = await cubit.repository.getProducts();
+    final accounts = await cubit.localRepository.getAccounts().first;
+    final customers = await cubit.localRepository.getCustomers().first;
+    final suppliers = await cubit.localRepository.getSuppliers().first;
+    final products = await cubit.localRepository.getProducts().first;
 
     if (!mounted) return;
 
