@@ -110,7 +110,7 @@ class _CustomSplashScreenState extends State<CustomSplashScreen> with SingleTick
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.account_balance_wallet, size: 80, color: Colors.white),
@@ -130,12 +130,23 @@ class _CustomSplashScreenState extends State<CustomSplashScreen> with SingleTick
   }
 }
 
-class MainAccountingPage extends StatelessWidget {
+class MainAccountingPage extends StatefulWidget {
   const MainAccountingPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<MainAccountingPage> createState() => _MainAccountingPageState();
+}
+
+class _MainAccountingPageState extends State<MainAccountingPage> {
+  @override
+  void initState() {
+    super.initState();
+    // ✅ مرة واحدة فقط عند بداية الشاشة وليس عند كل إعادة رسم
     context.read<AccountingCubit>().loadAccounts();
+  }
+
+  @override
+  Widget build(BuildContext context) {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -147,9 +158,16 @@ class MainAccountingPage extends StatelessWidget {
         elevation: 0,
       ),
       body: BlocBuilder<AccountingCubit, AccountingState>(
+        // ✅ يتجاهل أي حالة من صفحات أخرى (مثل CustomersLoaded, InvoicesLoaded)
+        buildWhen: (prev, curr) =>
+            curr is AccountingLoading ||
+            curr is AccountingLoaded ||
+            curr is AccountingError,
         builder: (context, state) {
-          if (state is AccountingLoading) return const Center(child: CircularProgressIndicator());
-          
+          if (state is AccountingLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
           if (state is AccountingLoaded) {
             return SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 24),
@@ -174,17 +192,21 @@ class MainAccountingPage extends StatelessWidget {
               ),
             );
           }
-          
+
           if (state is AccountingError) {
             return Center(child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(Icons.error_outline, size: 60, color: Colors.red),
                 Text(state.message),
-                ElevatedButton(onPressed: () => context.read<AccountingCubit>().loadAccounts(), child: const Text('إعادة المحاولة')),
+                ElevatedButton(
+                  onPressed: () => context.read<AccountingCubit>().loadAccounts(),
+                  child: const Text('إعادة المحاولة'),
+                ),
               ],
             ));
           }
+
           return const Center(child: CircularProgressIndicator());
         },
       ),
@@ -236,7 +258,13 @@ class MainAccountingPage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ElevatedButton.icon(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InvoicesPage())),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const InvoicesPage()),
+        ).then((_) {
+          // ✅ إعادة تحميل الداشبورد عند العودة
+          if (context.mounted) context.read<AccountingCubit>().loadAccounts();
+        }),
         icon: const Icon(Icons.receipt_long),
         label: const Text("سجل الفواتير"),
         style: ElevatedButton.styleFrom(
@@ -267,7 +295,13 @@ class MainAccountingPage extends StatelessWidget {
   Widget _mCard(BuildContext context, String t, IconData i, Color c, Widget p, int count) {
     return Expanded(
       child: InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => p)),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => p),
+        ).then((_) {
+          // ✅ إعادة تحميل الداشبورد عند العودة من أي صفحة فرعية
+          if (context.mounted) context.read<AccountingCubit>().loadAccounts();
+        }),
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),

@@ -21,6 +21,8 @@ class _InvoicesPageState extends State<InvoicesPage>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
+      // ✅ إعادة رسم الـ FAB عند تغيير التابز لتحديث النص
+      setState(() {});
       if (!_tabController.indexIsChanging) {
         _loadForTab(_tabController.index);
       }
@@ -44,20 +46,23 @@ class _InvoicesPageState extends State<InvoicesPage>
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
 
-    // جلب البيانات المطلوبة للفاتورة من المستودع الموحد
-    final accounts = await cubit.repository.getAccounts().first;
-    final customers = await cubit.repository.getCustomers().first;
-    final suppliers = await cubit.repository.getSuppliers().first;
-    final products = await cubit.repository.getProducts().first;
+    // جلب البيانات بشكل متوازي لتحسين السرعة
+    final results = await Future.wait([
+      cubit.repository.getAccounts().first,
+      cubit.repository.getCustomers().first,
+      cubit.repository.getSuppliers().first,
+      cubit.repository.getProducts().first,
+    ]);
 
     if (!mounted) return;
 
-    if (accounts.isEmpty) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('لا يوجد حسابات، أضف حساباً أولاً')),
-      );
-      return;
-    }
+    final accounts = results[0] as dynamic;
+    final customers = results[1] as dynamic;
+    final suppliers = results[2] as dynamic;
+    final products = results[3] as dynamic;
+
+    // الحساب اختياري - نستخدم الأول إذا وجد، وإلا نترك فارغاً
+    final String accountId = accounts.isNotEmpty ? accounts.first.id ?? '' : '';
 
     await nav.push(
       MaterialPageRoute(
@@ -66,7 +71,7 @@ class _InvoicesPageState extends State<InvoicesPage>
           customers: customers,
           suppliers: suppliers,
           products: products,
-          accountId: accounts.first.id!,
+          accountId: accountId,
           onSave: (invoice) async {
             await cubit.addInvoice(invoice);
             messenger.showSnackBar(
@@ -133,6 +138,10 @@ class _InvoiceListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AccountingCubit, AccountingState>(
+      buildWhen: (prev, curr) =>
+          curr is InvoicesLoaded ||
+          curr is AccountingLoading ||
+          curr is AccountingError,
       builder: (context, state) {
         if (state is AccountingLoading) return const Center(child: CircularProgressIndicator());
 

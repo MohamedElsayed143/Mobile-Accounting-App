@@ -42,7 +42,8 @@ class _CustomersPageState extends State<CustomersPage> {
           _buildSearchBar(),
           Expanded(
             child: BlocBuilder<AccountingCubit, AccountingState>(
-              builder: (context, state) {
+        buildWhen: (prev, curr) => curr is CustomersLoaded || curr is AccountingLoading || curr is AccountingError,
+        builder: (context, state) {
                 if (state is AccountingLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -300,3 +301,4 @@ class _CustomerFormState extends State<_CustomerForm> {
     );
   }
 }
+

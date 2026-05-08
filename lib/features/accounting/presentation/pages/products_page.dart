@@ -42,6 +42,10 @@ class _ProductsPageState extends State<ProductsPage> {
           _buildSearchBar(),
           Expanded(
             child: BlocBuilder<AccountingCubit, AccountingState>(
+              buildWhen: (prev, curr) =>
+                  curr is ProductsLoaded ||
+                  curr is AccountingLoading ||
+                  curr is AccountingError,
               builder: (context, state) {
                 if (state is AccountingLoading) return const Center(child: CircularProgressIndicator());
                 if (state is AccountingError) return Center(child: Text(state.message));
@@ -81,7 +85,7 @@ class _ProductsPageState extends State<ProductsPage> {
           hintStyle: const TextStyle(color: Colors.white70),
           prefixIcon: const Icon(Icons.search, color: Colors.white70),
           filled: true,
-          fillColor: Colors.white.withOpacity(0.15),
+          fillColor: Colors.white.withValues(alpha: 0.15),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         ),
       ),
@@ -153,7 +157,7 @@ class _ProductCard extends StatelessWidget {
           children: [
             Row(children: [
               CircleAvatar(
-                backgroundColor: const Color(0xFF6A1B9A).withOpacity(0.1),
+                backgroundColor: const Color(0xFF6A1B9A).withValues(alpha: 0.1),
                 child: const Icon(Icons.inventory_2, color: Color(0xFF6A1B9A), size: 20),
               ),
               const SizedBox(width: 12),
@@ -192,9 +196,9 @@ class _ProductCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Column(children: [
           Icon(icon, size: 14, color: color),
@@ -277,7 +281,7 @@ class _ProductFormState extends State<_ProductForm> {
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
               child: Row(
                 children: [
                   const Icon(Icons.percent, color: Colors.orange),

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/entities/invoice.dart';
@@ -30,42 +29,46 @@ class AccountingCubit extends Cubit<AccountingState> {
   ActiveView _activeView = ActiveView.dashboard;
   bool _isListening = false;
 
-  AccountingCubit({
-    required this.repository,
-  }) : super(AccountingInitial());
+  AccountingCubit({required this.repository}) : super(AccountingInitial());
 
-  // ─── Real-Time Listeners ───────────────────────────────────────
+  // ─── تشغيل الـ Streams لأول مرة فقط ────────────────────────────
   void _startListening() {
     if (_isListening) return;
     _isListening = true;
 
     _accountsSub = repository.getAccounts().listen((data) {
       _accounts = data;
-      _emitCurrentState();
-    });
+      if (_activeView == ActiveView.dashboard) _emitCurrentState();
+    }, onError: (e) => emit(AccountingError(ServerFailure('$e'))));
+
     _invoicesSub = repository.getInvoices().listen((data) {
       _invoices = data;
-      _emitCurrentState();
-    });
+      if (_activeView == ActiveView.invoices ||
+          _activeView == ActiveView.dashboard) _emitCurrentState();
+    }, onError: (e) => emit(AccountingError(ServerFailure('$e'))));
+
     _customersSub = repository.getCustomers().listen((data) {
       _customers = data;
-      _emitCurrentState();
-    });
+      if (_activeView == ActiveView.customers ||
+          _activeView == ActiveView.dashboard) _emitCurrentState();
+    }, onError: (e) => emit(AccountingError(ServerFailure('$e'))));
+
     _suppliersSub = repository.getSuppliers().listen((data) {
       _suppliers = data;
-      _emitCurrentState();
-    });
+      if (_activeView == ActiveView.suppliers ||
+          _activeView == ActiveView.dashboard) _emitCurrentState();
+    }, onError: (e) => emit(AccountingError(ServerFailure('$e'))));
+
     _productsSub = repository.getProducts().listen((data) {
       _products = data;
-      _emitCurrentState();
-    });
+      if (_activeView == ActiveView.products) _emitCurrentState();
+    }, onError: (e) => emit(AccountingError(ServerFailure('$e'))));
   }
 
   void _emitCurrentState() {
     switch (_activeView) {
       case ActiveView.dashboard:
-        double totalSales = 0;
-        double totalPurchases = 0;
+        double totalSales = 0, totalPurchases = 0;
         for (var inv in _invoices) {
           if (inv.type == InvoiceType.sale) totalSales += inv.totalAmount;
           else totalPurchases += inv.totalAmount;
@@ -94,34 +97,56 @@ class AccountingCubit extends Cubit<AccountingState> {
     }
   }
 
-  Future<void> loadAccounts() async {
+  // ─── Load Methods ──────────────────────────────────────────────
+  void loadAccounts() {
     _activeView = ActiveView.dashboard;
     emit(AccountingLoading());
-    _startListening();
+    if (!_isListening) {
+      _startListening();
+    } else {
+      // الـ streams شغّالة، ابعت البيانات الحالية فوراً
+      _emitCurrentState();
+    }
   }
 
-  Future<void> loadInvoices({String? type}) async {
+  void loadInvoices({String? type}) {
     _activeView = ActiveView.invoices;
     emit(AccountingLoading());
-    _startListening();
+    if (!_isListening) {
+      _startListening();
+    } else {
+      _emitCurrentState();
+    }
   }
 
-  Future<void> loadCustomers() async {
+  void loadCustomers() {
     _activeView = ActiveView.customers;
     emit(AccountingLoading());
-    _startListening();
+    if (!_isListening) {
+      _startListening();
+    } else {
+      _emitCurrentState();
+    }
   }
 
-  Future<void> loadSuppliers() async {
+  void loadSuppliers() {
     _activeView = ActiveView.suppliers;
     emit(AccountingLoading());
-    _startListening();
+    if (!_isListening) {
+      _startListening();
+    } else {
+      _emitCurrentState();
+    }
   }
 
-  Future<void> loadProducts() async {
+  void loadProducts() {
     _activeView = ActiveView.products;
     emit(AccountingLoading());
-    _startListening();
+    if (!_isListening) {
+      _startListening();
+    } else {
+      _emitCurrentState();
+    }
   }
 
   // ─── CRUD Operations ──────────────────────────────────────────
@@ -129,7 +154,6 @@ class AccountingCubit extends Cubit<AccountingState> {
   Future<void> addNewAccount(Account newAccount) async {
     try {
       await repository.addAccount(newAccount);
-      emit(AccountAddedSuccess());
     } catch (e) {
       emit(AccountingError(ServerFailure('فشل إضافة الحساب: $e')));
     }

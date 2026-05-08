@@ -51,10 +51,15 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
         foregroundColor: Colors.white,
         actions: [
           if (_isSaving)
-            const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+              ),
+            )
           else
             IconButton(
-              onPressed: _canSave ? _save : null,
+              onPressed: _canSave ? () => _save() : null,
               icon: const Icon(Icons.check),
             ),
         ],
@@ -183,7 +188,7 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                  decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
                   child: Column(
                     children: [
                       const Text('الخصم', style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold)),
@@ -202,9 +207,10 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
 
   void _addLine() => setState(() => _lines.add(_InvoiceLine()));
 
-  void _save() {
+  Future<void> _save() async {
+    if (!_canSave) return;
     setState(() => _isSaving = true);
-    
+
     final invoice = Invoice(
       invoiceNumber: DateTime.now().millisecondsSinceEpoch.toString(),
       date: _selectedDate.toLocal().toString().split(' ')[0],
@@ -222,11 +228,10 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
       accountId: widget.accountId,
     );
 
-    // نغلق النافذة أولاً لضمان الانتقال السريع
-    Navigator.pop(context);
-    
-    // نمرر البيانات لعملية الحفظ الخلفية
-    widget.onSave(invoice);
+    // ✅ نحفظ أولاً ثم نغلق - لضمان وصول البيانات للـ Stream قبل العودة
+    await Future.microtask(() => widget.onSave(invoice));
+
+    if (mounted) Navigator.pop(context);
   }
 }
 

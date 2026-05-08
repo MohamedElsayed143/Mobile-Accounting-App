@@ -42,6 +42,10 @@ class _SuppliersPageState extends State<SuppliersPage> {
           _buildSearchBar(),
           Expanded(
             child: BlocBuilder<AccountingCubit, AccountingState>(
+              buildWhen: (prev, curr) =>
+                  curr is SuppliersLoaded ||
+                  curr is AccountingLoading ||
+                  curr is AccountingError,
               builder: (context, state) {
                 if (state is AccountingLoading) return const Center(child: CircularProgressIndicator());
                 if (state is AccountingError) return Center(child: Text(state.message));
@@ -213,8 +217,6 @@ class _SupplierFormState extends State<_SupplierForm> {
           const SizedBox(height: 10),
           _field(_address, 'العنوان', Icons.location_on),
           const SizedBox(height: 10),
-          _field(_balance, 'الرصيد الافتراضي', Icons.account_balance_wallet, type: TextInputType.number),
-          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity, height: 50,
             child: ElevatedButton(
