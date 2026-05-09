@@ -259,8 +259,6 @@ class _CustomerFormState extends State<_CustomerForm> {
           const SizedBox(height: 10),
           _field(_address, 'العنوان', Icons.location_on),
           const SizedBox(height: 10),
-          _field(_balance, 'الرصيد الافتراضي', Icons.account_balance_wallet, type: TextInputType.number),
-          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             height: 50,

@@ -26,11 +26,18 @@ class FirebaseAuthService {
 
   static String getArabicError(FirebaseAuthException e) {
     switch (e.code) {
-      case 'user-not-found': return 'المستخدم غير موجود';
-      case 'wrong-password': return 'كلمة المرور غير صحيحة';
-      case 'email-already-in-use': return 'رقم الهاتف مسجل مسبقاً';
-      case 'weak-password': return 'كلمة المرور ضعيفة جداً';
-      default: return 'حدث خطأ: ${e.message}';
+      case 'user-not-found':
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'رقم الهاتف أو كلمة المرور غير صحيح';
+      case 'email-already-in-use':
+        return 'رقم الهاتف مسجل مسبقاً';
+      case 'weak-password':
+        return 'كلمة المرور ضعيفة جداً (6 أحرف على الأقل)';
+      case 'network-request-failed':
+        return 'فشل الاتصال بالإنترنت، تأكد من اتصالك بالشبكة';
+      default:
+        return 'حدث خطأ: ${e.message}';
     }
   }
 }
