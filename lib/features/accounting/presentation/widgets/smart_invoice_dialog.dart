@@ -44,7 +44,6 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(_isSale ? 'فاتورة بيع جديدة' : 'فاتورة شراء جديدة'),
         backgroundColor: _themeColor,

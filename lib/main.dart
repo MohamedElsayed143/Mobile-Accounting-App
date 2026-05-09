@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,6 +13,9 @@ import 'package:mobile_acc/features/accounting/presentation/pages/customers_page
 import 'package:mobile_acc/features/accounting/presentation/pages/suppliers_page.dart';
 import 'package:mobile_acc/features/accounting/presentation/pages/products_page.dart';
 import 'package:mobile_acc/features/accounting/presentation/widgets/summary_charts_widget.dart';
+import 'package:mobile_acc/features/accounting/presentation/pages/settings_page.dart';
+import 'package:mobile_acc/core/settings/settings_cubit.dart';
+import 'package:mobile_acc/core/settings/settings_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,8 +29,11 @@ void main() async {
   final FirestoreAccountingRepository repository = FirestoreAccountingRepository();
 
   runApp(
-    BlocProvider(
-      create: (context) => AccountingCubit(repository: repository),
+    MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => AccountingCubit(repository: repository)),
+        BlocProvider(create: (context) => SettingsCubit()),
+      ],
       child: const MobileAccApp(),
     ),
   );
@@ -37,23 +44,32 @@ class MobileAccApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'نظام المحاسبة الاحترافي',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo, primary: const Color(0xFF00695C)),
-        scaffoldBackgroundColor: const Color(0xFFF4F7FC),
-        useMaterial3: true,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [Locale('ar', 'SA')],
-      locale: const Locale('ar', 'SA'),
-      home: const CustomSplashScreen(),
+    return BlocBuilder<SettingsCubit, SettingsState>(
+      builder: (context, state) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'نظام المحاسبة الاحترافي',
+          themeMode: state.themeMode,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo, primary: const Color(0xFF00695C)),
+            scaffoldBackgroundColor: const Color(0xFFF4F7FC),
+            useMaterial3: true,
+            visualDensity: VisualDensity.adaptivePlatformDensity,
+          ),
+          darkTheme: ThemeData.dark().copyWith(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo, primary: const Color(0xFF00695C), brightness: Brightness.dark),
+            useMaterial3: true,
+          ),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('ar', 'SA'), Locale('en', 'US')],
+          locale: state.locale,
+          home: const CustomSplashScreen(),
+        );
+      },
     );
   }
 }
@@ -78,9 +94,12 @@ class _CustomSplashScreenState extends State<CustomSplashScreen> with SingleTick
 
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
+        final user = FirebaseAuth.instance.currentUser;
+        final Widget nextScreen = user != null ? const MainAccountingPage() : const LoginPage();
+
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const LoginPage(),
+            pageBuilder: (context, animation, secondaryAnimation) => nextScreen,
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
               return FadeTransition(opacity: animation, child: child);
             },
@@ -149,13 +168,23 @@ class _MainAccountingPageState extends State<MainAccountingPage> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('لوحة التحكم المالي', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color(0xFF00695C),
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsPage()),
+              );
+            },
+          ),
+        ],
       ),
       body: BlocBuilder<AccountingCubit, AccountingState>(
         // ✅ يتجاهل أي حالة من صفحات أخرى (مثل CustomersLoaded, InvoicesLoaded)
@@ -219,7 +248,7 @@ class _MainAccountingPageState extends State<MainAccountingPage> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15)],
       ),
@@ -244,7 +273,7 @@ class _MainAccountingPageState extends State<MainAccountingPage> {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Icon(icon, color: color, size: 20),
           Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
@@ -304,7 +333,7 @@ class _MainAccountingPageState extends State<MainAccountingPage> {
         }),
         child: Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16)),
           child: Column(children: [
             Icon(i, color: c),
             Text(t, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
@@ -318,7 +347,7 @@ class _MainAccountingPageState extends State<MainAccountingPage> {
   Widget _buildEnhancedAccountCard(BuildContext context, dynamic account) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: CircleAvatar(backgroundColor: const Color(0xFF00695C).withValues(alpha: 0.1), child: const Icon(Icons.wallet, color: Color(0xFF00695C), size: 20)),
         title: Text(account.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
