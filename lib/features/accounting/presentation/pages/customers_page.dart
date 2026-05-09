@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/customer.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_cubit.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_state.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class CustomersPage extends StatefulWidget {
   const CustomersPage({super.key});
@@ -23,7 +24,7 @@ class _CustomersPageState extends State<CustomersPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('العملاء', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('customers'.tr(), style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color(0xFF00897B),
         foregroundColor: Colors.white,
@@ -34,7 +35,7 @@ class _CustomersPageState extends State<CustomersPage> {
         foregroundColor: Colors.white,
         onPressed: () => _showForm(context, null),
         icon: const Icon(Icons.person_add),
-        label: const Text('إضافة عميل'),
+        label: Text('add_customer'.tr()),
       ),
       body: Column(
         children: [
@@ -85,7 +86,7 @@ class _CustomersPageState extends State<CustomersPage> {
         onChanged: (v) => setState(() => _search = v),
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
-          hintText: 'بحث باسم العميل أو الهاتف...',
+          hintText: 'search_by_customer_name_or_phone'.tr(),
           hintStyle: const TextStyle(color: Colors.white70),
           prefixIcon: const Icon(Icons.search, color: Colors.white70),
           filled: true,
@@ -106,10 +107,10 @@ class _CustomersPageState extends State<CustomersPage> {
         children: [
           Icon(Icons.people_outline, size: 80, color: Colors.grey[300]),
           const SizedBox(height: 16),
-          Text('لا يوجد عملاء بعد',
+          Text('no_customers_yet'.tr(),
               style: TextStyle(color: Colors.grey[500], fontSize: 16)),
           const SizedBox(height: 8),
-          Text('اضغط + لإضافة عميل جديد',
+          Text('press_plus_to_add_a_new_customer'.tr(),
               style: TextStyle(color: Colors.grey[400], fontSize: 13)),
         ],
       ),
@@ -135,17 +136,17 @@ class _CustomersPageState extends State<CustomersPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('حذف العميل'),
+        title: Text('delete_customer'.tr()),
         content: Text('هل تريد حذف "${customer.name}"؟'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('cancel'.tr())),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
               context.read<AccountingCubit>().deleteCustomer(customer.id!);
               Navigator.pop(context);
             },
-            child: const Text('حذف', style: TextStyle(color: Colors.white)),
+            child: Text('delete'.tr(), style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -170,7 +171,7 @@ class _CustomerCard extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: const Color(0xFF00897B).withValues(alpha: 0.1),
           child: Text(
-            customer.name.isNotEmpty ? customer.name[0] : '؟',
+            customer.name.isNotEmpty ? customer.name[0] : 'key_84'.tr(),
             style: const TextStyle(color: Color(0xFF00897B), fontWeight: FontWeight.bold),
           ),
         ),
@@ -195,8 +196,8 @@ class _CustomerCard extends StatelessWidget {
             PopupMenuButton<String>(
               onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('تعديل')])),
-                const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 18, color: Colors.red), SizedBox(width: 8), Text('حذف', style: TextStyle(color: Colors.red))])),
+                PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('edit'.tr())])),
+                PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 18, color: Colors.red), SizedBox(width: 8), Text('delete'.tr(), style: TextStyle(color: Colors.red))])),
               ],
             ),
           ],
@@ -247,16 +248,16 @@ class _CustomerFormState extends State<_CustomerForm> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.customer == null ? 'إضافة عميل جديد' : 'تعديل بيانات العميل',
+          Text(widget.customer == null ? 'add_new_customer'.tr() : 'edit_customer_details'.tr(),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          _field(_name, 'اسم العميل *', Icons.person),
+          _field(_name, 'customer_name'.tr(), Icons.person),
           const SizedBox(height: 10),
-          _field(_phone, 'رقم الهاتف', Icons.phone, type: TextInputType.phone),
+          _field(_phone, 'phone_number'.tr(), Icons.phone, type: TextInputType.phone),
           const SizedBox(height: 10),
-          _field(_email, 'البريد الإلكتروني', Icons.email, type: TextInputType.emailAddress),
+          _field(_email, 'email'.tr(), Icons.email, type: TextInputType.emailAddress),
           const SizedBox(height: 10),
-          _field(_address, 'العنوان', Icons.location_on),
+          _field(_address, 'address'.tr(), Icons.location_on),
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
@@ -277,7 +278,7 @@ class _CustomerFormState extends State<_CustomerForm> {
                   balance: double.tryParse(_balance.text) ?? 0,
                 ));
               },
-              child: const Text('حفظ', style: TextStyle(color: Colors.white, fontSize: 16)),
+              child: Text('save'.tr(), style: TextStyle(color: Colors.white, fontSize: 16)),
             ),
           ),
         ],

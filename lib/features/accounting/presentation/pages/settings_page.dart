@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_acc/core/settings/settings_cubit.dart';
@@ -35,21 +36,21 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('تعديل الملف الشخصي'),
+          title: Text('edit_profile'.tr()),
           content: Form(
             key: formKey,
             child: TextFormField(
               controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'الاسم',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'name'.tr(),
+                border: const OutlineInputBorder(),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'يرجى إدخال الاسم';
+                  return 'please_enter_the_name'.tr();
                 }
                 if (value.trim().length < 3) {
-                  return 'الاسم يجب أن يكون 3 أحرف على الأقل';
+                  return 'name_must_be_at_least_3_characters'.tr();
                 }
                 return null;
               },
@@ -58,7 +59,7 @@ class _SettingsPageState extends State<SettingsPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+              child: Text('cancel'.tr(), style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -74,7 +75,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 backgroundColor: const Color(0xFF00695C),
                 foregroundColor: Colors.white,
               ),
-              child: const Text('حفظ'),
+              child: Text('save'.tr()),
             ),
           ],
         );
@@ -91,7 +92,7 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('تغيير كلمة المرور'),
+          title: Text('change_password'.tr()),
           content: Form(
             key: formKey,
             child: Column(
@@ -100,16 +101,16 @@ class _SettingsPageState extends State<SettingsPage> {
                 TextFormField(
                   controller: passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'كلمة المرور الجديدة',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'new_password'.tr(),
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'يرجى إدخال كلمة المرور';
+                      return 'please_enter_the_password'.tr();
                     }
                     if (value.trim().length < 6) {
-                      return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+                      return 'password_must_be_at_least_6_characters'.tr();
                     }
                     return null;
                   },
@@ -118,13 +119,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 TextFormField(
                   controller: confirmPasswordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'تأكيد كلمة المرور',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'confirm_password'.tr(),
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value != passwordController.text) {
-                      return 'كلمات المرور غير متطابقة';
+                      return 'passwords_do_not_match'.tr();
                     }
                     return null;
                   },
@@ -135,7 +136,7 @@ class _SettingsPageState extends State<SettingsPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+              child: Text('cancel'.tr(), style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -145,7 +146,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     if (context.mounted) {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('تم تغيير كلمة المرور بنجاح')),
+                        SnackBar(content: Text('password_changed_successfully'.tr())),
                       );
                     }
                   } on FirebaseAuthException catch (e) {
@@ -153,7 +154,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       if (context.mounted) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('يرجى تسجيل الخروج والدخول مجدداً لإجراء هذا التغيير لأسباب أمنية')),
+                          SnackBar(content: Text('please_logout_and_login_again_to_apply_this_change_for_security_reasons'.tr())),
                         );
                       }
                     } else {
@@ -170,7 +171,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 backgroundColor: const Color(0xFF00695C),
                 foregroundColor: Colors.white,
               ),
-              child: const Text('حفظ'),
+              child: Text('save'.tr()),
             ),
           ],
         );
@@ -182,7 +183,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الإعدادات', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('settings'.tr(), style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color(0xFF00695C),
         foregroundColor: Colors.white,
@@ -193,7 +194,7 @@ class _SettingsPageState extends State<SettingsPage> {
           return ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
-              _buildSectionTitle('الملف الشخصي'),
+              _buildSectionTitle('profile'.tr()),
               Card(
                 elevation: 2,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -204,8 +205,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     radius: 24,
                     child: Icon(Icons.person, color: Colors.white, size: 28),
                   ),
-                  title: Text(currentUser?.displayName ?? 'مستخدم بدون اسم', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  subtitle: Text(currentUser?.email?.replaceAll('@mobileacc.app', '') ?? 'لا يوجد رقم هاتف', style: const TextStyle(fontSize: 14)),
+                  title: Text(currentUser?.displayName ?? 'unnamed_user'.tr(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  subtitle: Text(currentUser?.email?.replaceAll('@mobileacc.app', '') ?? 'no_phone_number'.tr(), style: TextStyle(fontSize: 14)),
                   trailing: IconButton(
                     icon: const Icon(Icons.edit, color: Color(0xFF00695C)),
                     onPressed: _editProfile,
@@ -214,14 +215,14 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               const SizedBox(height: 24),
               
-              _buildSectionTitle('التفضيلات'),
+              _buildSectionTitle('preferences'.tr()),
               Card(
                 elevation: 2,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: Column(
                   children: [
                     SwitchListTile(
-                      title: const Text('الوضع الليلي'),
+                      title: Text('dark_mode'.tr()),
                       secondary: const Icon(Icons.dark_mode, color: Colors.indigo),
                       activeColor: const Color(0xFF00695C),
                       value: state.themeMode == ThemeMode.dark,
@@ -231,18 +232,19 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     const Divider(height: 1),
                     ListTile(
-                      title: const Text('اللغة'),
+                      title: Text('language'.tr()),
                       leading: const Icon(Icons.language, color: Colors.blue),
                       trailing: DropdownButton<String>(
                         value: state.locale.languageCode,
                         underline: const SizedBox(),
-                        items: const [
-                          DropdownMenuItem(value: 'ar', child: Text('العربية')),
-                          DropdownMenuItem(value: 'en', child: Text('English')),
+                        items: [
+                          DropdownMenuItem(value: 'ar', child: Text('arabic'.tr())),
+                          const DropdownMenuItem(value: 'en', child: Text('English')),
                         ],
                         onChanged: (value) {
                           if (value != null) {
                             context.read<SettingsCubit>().changeLanguage(value);
+                            context.setLocale(Locale(value));
                           }
                         },
                       ),
@@ -252,12 +254,12 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               const SizedBox(height: 24),
 
-              _buildSectionTitle('الأمان'),
+              _buildSectionTitle('security'.tr()),
               Card(
                 elevation: 2,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: ListTile(
-                  title: const Text('تغيير كلمة المرور'),
+                  title: Text('change_password'.tr()),
                   leading: const Icon(Icons.lock, color: Colors.orange),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
                   onTap: _changePassword,
@@ -265,14 +267,14 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               const SizedBox(height: 24),
 
-              _buildSectionTitle('عن التطبيق'),
+              _buildSectionTitle('about_app'.tr()),
               Card(
                 elevation: 2,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: Column(
                   children: [
                     ListTile(
-                      title: const Text('رقم الإصدار'),
+                      title: Text('version_number'.tr()),
                       leading: const Icon(Icons.info, color: Colors.teal),
                       trailing: const Text('1.0.0', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
@@ -284,7 +286,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ElevatedButton.icon(
                 onPressed: _logout,
                 icon: const Icon(Icons.logout),
-                label: const Text('تسجيل الخروج', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                label: Text('logout'.tr(), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red.shade600,
                   foregroundColor: Colors.white,

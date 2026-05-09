@@ -4,6 +4,7 @@ import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_cubit.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_state.dart';
 import 'package:mobile_acc/features/accounting/presentation/widgets/smart_invoice_dialog.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({super.key});
@@ -77,7 +78,7 @@ class _InvoicesPageState extends State<InvoicesPage>
             messenger.showSnackBar(
               SnackBar(
                 content: Text(
-                    '✅ تم حفظ ${type == InvoiceType.sale ? 'فاتورة البيع' : 'فاتورة الشراء'} بنجاح'),
+                    '✅ تم حفظ ${type == InvoiceType.sale ? 'فاتورة البيع' : 'purchase_invoice_1'.tr()} بنجاح'),
                 backgroundColor: const Color(0xFF00695C),
               ),
             );
@@ -93,7 +94,7 @@ class _InvoicesPageState extends State<InvoicesPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الفواتير', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('invoices'.tr(), style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color(0xFF00695C),
         foregroundColor: Colors.white,
@@ -103,9 +104,9 @@ class _InvoicesPageState extends State<InvoicesPage>
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
-          tabs: const [
-            Tab(icon: Icon(Icons.trending_up), text: 'فواتير البيع'),
-            Tab(icon: Icon(Icons.trending_down), text: 'فواتير الشراء'),
+          tabs: [
+            Tab(icon: const Icon(Icons.trending_up), text: 'sales_invoices'.tr()),
+            Tab(icon: const Icon(Icons.trending_down), text: 'purchase_invoices'.tr()),
           ],
         ),
       ),
@@ -117,7 +118,7 @@ class _InvoicesPageState extends State<InvoicesPage>
           _openNewInvoiceDialog(type);
         },
         icon: const Icon(Icons.add),
-        label: Text(_tabController.index == 0 ? 'فاتورة بيع' : 'فاتورة شراء'),
+        label: Text(_tabController.index == 0 ? 'sales_invoice'.tr() : 'purchase_invoice'.tr()),
       ),
       body: TabBarView(
         controller: _tabController,
@@ -160,10 +161,10 @@ class _InvoiceListView extends StatelessWidget {
               Icon(type == InvoiceType.sale ? Icons.receipt_long : Icons.inventory_2_outlined,
                   size: 80, color: Colors.grey[300]),
               const SizedBox(height: 16),
-              Text(type == InvoiceType.sale ? 'لا توجد فواتير بيع بعد' : 'لا توجد فواتير شراء بعد',
+              Text(type == InvoiceType.sale ? 'no_sales_invoices_yet'.tr() : 'no_purchase_invoices_yet'.tr(),
                   style: TextStyle(color: Colors.grey[500], fontSize: 16)),
               const SizedBox(height: 8),
-              Text('اضغط + لإضافة فاتورة جديدة',
+              Text('press_plus_to_add_a_new_invoice'.tr(),
                   style: TextStyle(color: Colors.grey[400], fontSize: 13)),
             ]));
           }

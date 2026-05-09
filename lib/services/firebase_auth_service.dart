@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class FirebaseAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -29,13 +30,13 @@ class FirebaseAuthService {
       case 'user-not-found':
       case 'wrong-password':
       case 'invalid-credential':
-        return 'رقم الهاتف أو كلمة المرور غير صحيح';
+        return 'invalid_phone_number_or_password'.tr();
       case 'email-already-in-use':
-        return 'رقم الهاتف مسجل مسبقاً';
+        return 'phone_number_is_already_registered'.tr();
       case 'weak-password':
         return 'كلمة المرور ضعيفة جداً (6 أحرف على الأقل)';
       case 'network-request-failed':
-        return 'فشل الاتصال بالإنترنت، تأكد من اتصالك بالشبكة';
+        return 'no_internet_connection_please_check_your_network'.tr();
       default:
         return 'حدث خطأ: ${e.message}';
     }

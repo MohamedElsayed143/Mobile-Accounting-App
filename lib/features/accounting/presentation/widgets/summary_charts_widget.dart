@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class SummaryChartsWidget extends StatelessWidget {
   final double sales;
@@ -22,7 +23,7 @@ class SummaryChartsWidget extends StatelessWidget {
         centerSpaceRadius: 50, // مساحة الفراغ في المنتصف
         startDegreeOffset: -90,
         sections: isEmpty
-            ? [PieChartSectionData(color: Colors.grey[300], value: 1, radius: 100, title: 'لا بيانات')]
+            ? [PieChartSectionData(color: Colors.grey[300], value: 1, radius: 100, title: 'no_data'.tr())]
             : _buildSections(),
       ),
     );
@@ -36,7 +37,7 @@ class SummaryChartsWidget extends StatelessWidget {
       PieChartSectionData(
         color: Colors.green,
         value: sales,
-        title: 'مبيعات',
+        title: 'sales'.tr(),
         radius: chartRadius,
         titleStyle: const TextStyle(
           fontSize: 16,
@@ -47,7 +48,7 @@ class SummaryChartsWidget extends StatelessWidget {
       PieChartSectionData(
         color: Colors.redAccent,
         value: purchases,
-        title: 'مشتريات',
+        title: 'purchases_1'.tr(),
         radius: chartRadius,
         titleStyle: const TextStyle(
           fontSize: 16,

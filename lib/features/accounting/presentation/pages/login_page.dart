@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_acc/main.dart';
 import 'package:mobile_acc/services/firebase_auth_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -37,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const Icon(Icons.account_balance, size: 80, color: Color(0xFF00695C)),
               const SizedBox(height: 20),
-              Text(_isLogin ? "تسجيل الدخول" : "إنشاء حساب جديد",
+              Text(_isLogin ? "login".tr() : "create_new_account".tr(),
                   style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -48,7 +49,7 @@ class _LoginPageState extends State<LoginPage> {
                 TextField(
                   controller: _nameController,
                   decoration: InputDecoration(
-                    labelText: "الاسم الكامل",
+                    labelText: "full_name".tr(),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
                     prefixIcon: const Icon(Icons.person),
@@ -61,7 +62,7 @@ class _LoginPageState extends State<LoginPage> {
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
-                  labelText: "رقم الموبايل",
+                  labelText: "mobile_number".tr(),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12)),
                   prefixIcon: const Icon(Icons.phone_android),
@@ -73,7 +74,7 @@ class _LoginPageState extends State<LoginPage> {
                 controller: _passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
-                  labelText: "كلمة المرور",
+                  labelText: "password".tr(),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12)),
                   prefixIcon: const Icon(Icons.lock),
@@ -98,7 +99,7 @@ class _LoginPageState extends State<LoginPage> {
                   },
                   child: _isLoading 
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(_isLogin ? "دخول" : "تسجيل",
+                    : Text(_isLogin ? "enter".tr() : "register".tr(),
                       style: const TextStyle(color: Colors.white, fontSize: 18)),
                 ),
               ),
@@ -112,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                   });
                 },
                 child: Text(
-                  _isLogin ? "ليس لديك حساب؟ سجل الآن" : "لديك حساب بالفعل؟ سجل دخول",
+                  _isLogin ? "don't_have_an_account_register_now".tr() : "already_have_an_account_login".tr(),
                   style: const TextStyle(color: Color(0xFF00695C)),
                 ),
               ),
@@ -128,12 +129,12 @@ class _LoginPageState extends State<LoginPage> {
     final password = _passwordController.text.trim();
 
     if (phone.isEmpty || password.isEmpty) {
-      _showError('برجاء إدخال رقم الموبايل وكلمة المرور');
+      _showError('please_enter_mobile_number_and_password'.tr());
       return;
     }
 
     if (phone.length != 11) {
-      _showError('رقم الموبايل يجب أن يكون 11 رقم');
+      _showError('mobile_number_must_be_11_digits'.tr());
       return;
     }
 
@@ -144,7 +145,7 @@ class _LoginPageState extends State<LoginPage> {
     } on FirebaseAuthException catch (e) {
       _showError(FirebaseAuthService.getArabicError(e));
     } catch (e) {
-      _showError('حدث خطأ غير متوقع');
+      _showError('an_unexpected_error_occurred'.tr());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -156,17 +157,17 @@ class _LoginPageState extends State<LoginPage> {
     final password = _passwordController.text.trim();
 
     if (name.isEmpty || phone.isEmpty || password.isEmpty) {
-      _showError('برجاء ملء جميع الحقول');
+      _showError('please_fill_all_fields'.tr());
       return;
     }
 
     if (phone.length != 11) {
-      _showError('رقم الموبايل يجب أن يكون 11 رقم');
+      _showError('mobile_number_must_be_11_digits'.tr());
       return;
     }
 
     if (password.length < 6) {
-      _showError('كلمة المرور يجب أن لا تقل عن 6 أحرف');
+      _showError('password_must_not_be_less_than_6_characters'.tr());
       return;
     }
 
@@ -175,9 +176,9 @@ class _LoginPageState extends State<LoginPage> {
       await _authService.signUp(name: name, phone: phone, password: password);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول'),
-          backgroundColor: Color(0xFF00695C),
+        SnackBar(
+          content: Text('account_created_successfully_please_login'.tr()),
+          backgroundColor: const Color(0xFF00695C),
         ),
       );
       setState(() {
@@ -189,7 +190,7 @@ class _LoginPageState extends State<LoginPage> {
     } on FirebaseAuthException catch (e) {
       _showError(FirebaseAuthService.getArabicError(e));
     } catch (e) {
-      _showError('حدث خطأ غير متوقع');
+      _showError('an_unexpected_error_occurred'.tr());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

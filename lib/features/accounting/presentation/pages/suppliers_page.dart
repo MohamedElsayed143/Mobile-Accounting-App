@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/supplier.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_cubit.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_state.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class SuppliersPage extends StatefulWidget {
   const SuppliersPage({super.key});
@@ -23,7 +24,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الموردون', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('suppliers_1'.tr(), style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color(0xFF1565C0),
         foregroundColor: Colors.white,
@@ -34,7 +35,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
         foregroundColor: Colors.white,
         onPressed: () => _showForm(context, null),
         icon: const Icon(Icons.person_add),
-        label: const Text('إضافة مورد'),
+        label: Text('add_supplier'.tr()),
       ),
       body: Column(
         children: [
@@ -80,7 +81,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
         onChanged: (v) => setState(() => _search = v),
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
-          hintText: 'بحث باسم المورد أو الهاتف...',
+          hintText: 'search_by_supplier_name_or_phone'.tr(),
           hintStyle: const TextStyle(color: Colors.white70),
           prefixIcon: const Icon(Icons.search, color: Colors.white70),
           filled: true,
@@ -95,9 +96,9 @@ class _SuppliersPageState extends State<SuppliersPage> {
     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       Icon(Icons.store_outlined, size: 80, color: Colors.grey[300]),
       const SizedBox(height: 16),
-      Text('لا يوجد موردون بعد', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+      Text('no_suppliers_yet'.tr(), style: TextStyle(color: Colors.grey[500], fontSize: 16)),
       const SizedBox(height: 8),
-      Text('اضغط + لإضافة مورد جديد', style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+      Text('press_plus_to_add_a_new_supplier'.tr(), style: TextStyle(color: Colors.grey[400], fontSize: 13)),
     ]),
   );
 
@@ -117,14 +118,14 @@ class _SuppliersPageState extends State<SuppliersPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('حذف المورد'),
+        title: Text('delete_supplier'.tr()),
         content: Text('هل تريد حذف "${supplier.name}"؟'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('cancel'.tr())),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () { context.read<AccountingCubit>().deleteSupplier(supplier.id!); Navigator.pop(context); },
-            child: const Text('حذف', style: TextStyle(color: Colors.white)),
+            child: Text('delete'.tr(), style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -147,7 +148,7 @@ class _SupplierCard extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           backgroundColor: const Color(0xFF1565C0).withValues(alpha: 0.1),
-          child: Text(supplier.name.isNotEmpty ? supplier.name[0] : '؟',
+          child: Text(supplier.name.isNotEmpty ? supplier.name[0] : 'key_84'.tr(),
               style: const TextStyle(color: Color(0xFF1565C0), fontWeight: FontWeight.bold)),
         ),
         title: Text(supplier.name, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -159,8 +160,8 @@ class _SupplierCard extends StatelessWidget {
           PopupMenuButton<String>(
             onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
             itemBuilder: (_) => [
-              const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('تعديل')])),
-              const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 18, color: Colors.red), SizedBox(width: 8), Text('حذف', style: TextStyle(color: Colors.red))])),
+              PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('edit'.tr())])),
+              PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 18, color: Colors.red), SizedBox(width: 8), Text('delete'.tr(), style: TextStyle(color: Colors.red))])),
             ],
           ),
         ]),
@@ -208,16 +209,16 @@ class _SupplierFormState extends State<_SupplierForm> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.supplier == null ? 'إضافة مورد جديد' : 'تعديل بيانات المورد',
+          Text(widget.supplier == null ? 'add_new_supplier'.tr() : 'edit_supplier_details'.tr(),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          _field(_name, 'اسم المورد *', Icons.store),
+          _field(_name, 'supplier_name'.tr(), Icons.store),
           const SizedBox(height: 10),
-          _field(_phone, 'رقم الهاتف', Icons.phone, type: TextInputType.phone),
+          _field(_phone, 'phone_number'.tr(), Icons.phone, type: TextInputType.phone),
           const SizedBox(height: 10),
-          _field(_email, 'البريد الإلكتروني', Icons.email, type: TextInputType.emailAddress),
+          _field(_email, 'email'.tr(), Icons.email, type: TextInputType.emailAddress),
           const SizedBox(height: 10),
-          _field(_address, 'العنوان', Icons.location_on),
+          _field(_address, 'address'.tr(), Icons.location_on),
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity, height: 50,
@@ -227,7 +228,7 @@ class _SupplierFormState extends State<_SupplierForm> {
                 if (_name.text.trim().isEmpty) return;
                 widget.onSave(Supplier(id: widget.supplier?.id, name: _name.text.trim(), phone: _phone.text.trim(), email: _email.text.trim(), address: _address.text.trim(), balance: double.tryParse(_balance.text) ?? 0));
               },
-              child: const Text('حفظ', style: TextStyle(color: Colors.white, fontSize: 16)),
+              child: Text('save'.tr(), style: TextStyle(color: Colors.white, fontSize: 16)),
             ),
           ),
         ],

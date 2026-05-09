@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_cubit.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_state.dart';
@@ -28,13 +29,20 @@ void main() async {
 
   final FirestoreAccountingRepository repository = FirestoreAccountingRepository();
 
+  await EasyLocalization.ensureInitialized();
+
   runApp(
-    MultiBlocProvider(
-      providers: [
-        BlocProvider(create: (context) => AccountingCubit(repository: repository)),
-        BlocProvider(create: (context) => SettingsCubit()),
-      ],
-      child: const MobileAccApp(),
+    EasyLocalization(
+      supportedLocales: const [Locale('ar'), Locale('en')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('ar'),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (context) => AccountingCubit(repository: repository)),
+          BlocProvider(create: (context) => SettingsCubit()),
+        ],
+        child: const MobileAccApp(),
+      ),
     ),
   );
 }
@@ -48,7 +56,7 @@ class MobileAccApp extends StatelessWidget {
       builder: (context, state) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'نظام المحاسبة الاحترافي',
+          title: 'professional_accounting_system'.tr(),
           themeMode: state.themeMode,
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo, primary: const Color(0xFF00695C)),
@@ -60,13 +68,9 @@ class MobileAccApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo, primary: const Color(0xFF00695C), brightness: Brightness.dark),
             useMaterial3: true,
           ),
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('ar', 'SA'), Locale('en', 'US')],
-          locale: state.locale,
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
           home: const CustomSplashScreen(),
         );
       },
@@ -135,9 +139,9 @@ class _CustomSplashScreenState extends State<CustomSplashScreen> with SingleTick
                 child: const Icon(Icons.account_balance_wallet, size: 80, color: Colors.white),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'نظام المحاسبة الذكي',
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              Text(
+                'smart_accounting_system'.tr(),
+                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
               const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
@@ -169,7 +173,7 @@ class _MainAccountingPageState extends State<MainAccountingPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('لوحة التحكم المالي', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('financial_dashboard'.tr(), style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color(0xFF00695C),
         foregroundColor: Colors.white,
@@ -207,9 +211,9 @@ class _MainAccountingPageState extends State<MainAccountingPage> {
                   _buildChartsSection(state),
                   _buildQuickActions(context),
                   _buildManagementSection(context, state),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
-                    child: Text("دليل الحسابات", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                    child: Text("chart_of_accounts".tr(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                   ListView.builder(
                     shrinkWrap: true,
@@ -230,7 +234,7 @@ class _MainAccountingPageState extends State<MainAccountingPage> {
                 Text(state.message),
                 ElevatedButton(
                   onPressed: () => context.read<AccountingCubit>().loadAccounts(),
-                  child: const Text('إعادة المحاولة'),
+                  child: Text('retry'.tr()),
                 ),
               ],
             ));
@@ -261,9 +265,9 @@ class _MainAccountingPageState extends State<MainAccountingPage> {
       padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
-          _statCard("المبيعات", state.totalSales, Colors.green, Icons.trending_up),
+          _statCard("sales_1".tr(), state.totalSales, Colors.green, Icons.trending_up),
           const SizedBox(width: 12),
-          _statCard("المشتريات", state.totalPurchases, Colors.redAccent, Icons.trending_down),
+          _statCard("purchases".tr(), state.totalPurchases, Colors.redAccent, Icons.trending_down),
         ],
       ),
     );
@@ -295,7 +299,7 @@ class _MainAccountingPageState extends State<MainAccountingPage> {
           if (context.mounted) context.read<AccountingCubit>().loadAccounts();
         }),
         icon: const Icon(Icons.receipt_long),
-        label: const Text("سجل الفواتير"),
+        label: Text("invoices_history".tr()),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.teal.withValues(alpha: 0.1),
           foregroundColor: Colors.teal,
@@ -311,11 +315,11 @@ class _MainAccountingPageState extends State<MainAccountingPage> {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          _mCard(context, "العملاء", Icons.people, const Color(0xFF00897B), const CustomersPage(), state.customerCount),
+          _mCard(context, "customers".tr(), Icons.people, Color(0xFF00897B), CustomersPage(), state.customerCount),
           const SizedBox(width: 12),
-          _mCard(context, "الموردين", Icons.store, const Color(0xFF1565C0), const SuppliersPage(), state.supplierCount),
+          _mCard(context, "suppliers".tr(), Icons.store, Color(0xFF1565C0), SuppliersPage(), state.supplierCount),
           const SizedBox(width: 12),
-          _mCard(context, "الأصناف", Icons.inventory, const Color(0xFF6A1B9A), const ProductsPage(), state.productCount),
+          _mCard(context, "items".tr(), Icons.inventory, Color(0xFF6A1B9A), ProductsPage(), state.productCount),
         ],
       ),
     );

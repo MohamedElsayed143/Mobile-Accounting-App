@@ -3,6 +3,7 @@ import 'package:mobile_acc/features/accounting/domain/entities/customer.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/supplier.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/product.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/invoice.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class SmartInvoiceDialog extends StatefulWidget {
   final InvoiceType type;
@@ -45,7 +46,7 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isSale ? 'فاتورة بيع جديدة' : 'فاتورة شراء جديدة'),
+        title: Text(_isSale ? 'new_sales_invoice'.tr() : 'new_purchase_invoice'.tr()),
         backgroundColor: _themeColor,
         foregroundColor: Colors.white,
         actions: [
@@ -77,8 +78,8 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('أصناف الفاتورة', style: TextStyle(fontWeight: FontWeight.bold)),
-                      TextButton.icon(onPressed: _addLine, icon: const Icon(Icons.add), label: const Text('إضافة صنف')),
+                      Text('invoice_items'.tr(), style: TextStyle(fontWeight: FontWeight.bold)),
+                      TextButton.icon(onPressed: _addLine, icon: Icon(Icons.add), label: Text('add_item'.tr())),
                     ],
                   ),
                   ..._lines.asMap().entries.map((e) => _buildLineCard(e.key, e.value)),
@@ -109,13 +110,13 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
         child: _isSale
             ? DropdownButtonFormField<Customer>(
                 value: _selectedCustomer,
-                hint: const Text('اختر عميلاً'),
+                hint: Text('select_a_customer'.tr()),
                 items: widget.customers.map((c) => DropdownMenuItem(value: c, child: Text(c.name))).toList(),
                 onChanged: (v) => setState(() => _selectedCustomer = v),
               )
             : DropdownButtonFormField<Supplier>(
                 value: _selectedSupplier,
-                hint: const Text('اختر مورداً'),
+                hint: Text('select_a_supplier'.tr()),
                 items: widget.suppliers.map((s) => DropdownMenuItem(value: s, child: Text(s.name))).toList(),
                 onChanged: (v) => setState(() => _selectedSupplier = v),
               ),
@@ -144,7 +145,7 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
           children: [
             DropdownButtonFormField<Product>(
               value: line.product,
-              hint: const Text('اختر صنفاً'),
+              hint: Text('select_an_item'.tr()),
               items: widget.products.map((p) => DropdownMenuItem(value: p, child: Text(p.name))).toList(),
               onChanged: (p) => setState(() {
                 line.product = p;
@@ -158,14 +159,14 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(child: TextFormField(initialValue: line.quantity.toString(), keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'الكمية', isDense: true), onChanged: (v) => setState(() => line.quantity = double.tryParse(v) ?? 0))),
+                Expanded(child: TextFormField(initialValue: line.quantity.toString(), keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'quantity'.tr(), isDense: true), onChanged: (v) => setState(() => line.quantity = double.tryParse(v) ?? 0))),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextFormField(
                     key: ValueKey('${line.product?.id}_${line.price}'),
                     initialValue: line.price.toString(),
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'السعر', isDense: true),
+                    decoration: InputDecoration(labelText: 'price'.tr(), isDense: true),
                     onChanged: (v) {
                       double newPrice = double.tryParse(v) ?? 0;
                       setState(() {
@@ -190,7 +191,7 @@ class _SmartInvoiceDialogState extends State<SmartInvoiceDialog> {
                   decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
                   child: Column(
                     children: [
-                      const Text('الخصم', style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold)),
+                      Text('discount_1'.tr(), style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold)),
                       Text('${line.discount.toStringAsFixed(1)}%', style: const TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.bold)),
                     ],
                   ),

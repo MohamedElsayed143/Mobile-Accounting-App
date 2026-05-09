@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/account.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/journal_entry.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class AddEntryDialog extends StatefulWidget {
   final List<Account> accounts;
@@ -54,7 +55,7 @@ class _AddEntryDialogState extends State<AddEntryDialog> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إضافة قيد يومية جديد'),
+        title: Text('add_new_journal_entry'.tr()),
         actions: [
           IconButton(
             onPressed: isBalanced
@@ -79,11 +80,11 @@ class _AddEntryDialogState extends State<AddEntryDialog> {
           children: [
             TextField(
               controller: _descController,
-              decoration: const InputDecoration(labelText: 'الوصف'),
+              decoration: InputDecoration(labelText: 'description'.tr()),
             ),
             const SizedBox(height: 16),
             ..._lines.asMap().entries.map((e) => _buildLineItem(e.key, e.value)),
-            TextButton.icon(onPressed: _addLine, icon: const Icon(Icons.add), label: const Text('إضافة سطر')),
+            TextButton.icon(onPressed: _addLine, icon: Icon(Icons.add), label: Text('add_row'.tr())),
           ],
         ),
       ),
@@ -105,9 +106,9 @@ class _AddEntryDialogState extends State<AddEntryDialog> {
             ),
             Row(
               children: [
-                Expanded(child: TextFormField(initialValue: line.debit.toString(), keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'مدين'), onChanged: (v) => setState(() => _lines[index] = _lines[index].copyWithRepo(debit: double.tryParse(v) ?? 0)))),
+                Expanded(child: TextFormField(initialValue: line.debit.toString(), keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'debit'.tr()), onChanged: (v) => setState(() => _lines[index] = _lines[index].copyWithRepo(debit: double.tryParse(v) ?? 0)))),
                 const SizedBox(width: 8),
-                Expanded(child: TextFormField(initialValue: line.credit.toString(), keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'دائن'), onChanged: (v) => setState(() => _lines[index] = _lines[index].copyWithRepo(credit: double.tryParse(v) ?? 0)))),
+                Expanded(child: TextFormField(initialValue: line.credit.toString(), keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'credit'.tr()), onChanged: (v) => setState(() => _lines[index] = _lines[index].copyWithRepo(credit: double.tryParse(v) ?? 0)))),
                 IconButton(icon: const Icon(Icons.delete), onPressed: () => _removeLine(index)),
               ],
             ),

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/product.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_cubit.dart';
 import 'package:mobile_acc/features/accounting/presentation/bloc/accounting_state.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ProductsPage extends StatefulWidget {
   const ProductsPage({super.key});
@@ -23,7 +24,7 @@ class _ProductsPageState extends State<ProductsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('المنتجات - كارت الصنف', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('products_product_card'.tr(), style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: const Color(0xFF6A1B9A),
         foregroundColor: Colors.white,
@@ -34,7 +35,7 @@ class _ProductsPageState extends State<ProductsPage> {
         foregroundColor: Colors.white,
         onPressed: () => _showForm(context, null),
         icon: const Icon(Icons.add_box),
-        label: const Text('إضافة صنف'),
+        label: Text('add_item'.tr()),
       ),
       body: Column(
         children: [
@@ -80,7 +81,7 @@ class _ProductsPageState extends State<ProductsPage> {
         onChanged: (v) => setState(() => _search = v),
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
-          hintText: 'بحث باسم الصنف أو الكود...',
+          hintText: 'search_by_item_name_or_code'.tr(),
           hintStyle: const TextStyle(color: Colors.white70),
           prefixIcon: const Icon(Icons.search, color: Colors.white70),
           filled: true,
@@ -95,9 +96,9 @@ class _ProductsPageState extends State<ProductsPage> {
     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       Icon(Icons.inventory_2_outlined, size: 80, color: Colors.grey[300]),
       const SizedBox(height: 16),
-      Text('لا يوجد منتجات بعد', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+      Text('no_products_yet'.tr(), style: TextStyle(color: Colors.grey[500], fontSize: 16)),
       const SizedBox(height: 8),
-      Text('اضغط + لإضافة صنف جديد', style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+      Text('press_plus_to_add_a_new_item'.tr(), style: TextStyle(color: Colors.grey[400], fontSize: 13)),
     ]),
   );
 
@@ -117,14 +118,14 @@ class _ProductsPageState extends State<ProductsPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('حذف الصنف'),
+        title: Text('delete_item'.tr()),
         content: Text('هل تريد حذف "${product.name}"؟'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('cancel'.tr())),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () { context.read<AccountingCubit>().deleteProduct(product.id!); Navigator.pop(context); },
-            child: const Text('حذف', style: TextStyle(color: Colors.white)),
+            child: Text('delete'.tr(), style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -169,20 +170,20 @@ class _ProductCard extends StatelessWidget {
               PopupMenuButton<String>(
                 onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
                 itemBuilder: (_) => [
-                  const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('تعديل')])),
-                  const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 18, color: Colors.red), SizedBox(width: 8), Text('حذف', style: TextStyle(color: Colors.red))])),
+                  PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('edit'.tr())])),
+                  PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 18, color: Colors.red), SizedBox(width: 8), Text('delete'.tr(), style: TextStyle(color: Colors.red))])),
                 ],
               ),
             ]),
             const SizedBox(height: 10),
             Row(children: [
-              _infoChip(Icons.arrow_downward, 'شراء', '${product.buyPrice.toStringAsFixed(2)} ج.م', Colors.blue),
+              _infoChip(Icons.arrow_downward, 'purchase'.tr(), '${product.buyPrice.toStringAsFixed(2)} ج.م', Colors.blue),
               const SizedBox(width: 8),
-              _infoChip(Icons.arrow_upward, 'بيع', '${product.sellPrice.toStringAsFixed(2)} ج.م', Colors.teal),
+              _infoChip(Icons.arrow_upward, 'sale'.tr(), '${product.sellPrice.toStringAsFixed(2)} ج.م', Colors.teal),
               const SizedBox(width: 8),
-              _infoChip(Icons.percent, 'خصم', '${product.discount.toStringAsFixed(1)}%', Colors.orange),
+              _infoChip(Icons.percent, 'discount'.tr(), '${product.discount.toStringAsFixed(1)}%', Colors.orange),
               const SizedBox(width: 8),
-              _infoChip(Icons.inventory, 'رصيد', product.quantity.toStringAsFixed(1), _stockColor),
+              _infoChip(Icons.inventory, 'balance'.tr(), product.quantity.toStringAsFixed(1), _stockColor),
             ]),
           ],
         ),
@@ -266,19 +267,19 @@ class _ProductFormState extends State<_ProductForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.product == null ? 'إضافة صنف جديد' : 'تعديل كارت الصنف',
+            Text(widget.product == null ? 'add_new_product'.tr() : 'edit_product_card'.tr(),
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             Row(children: [
-              Expanded(child: _field(_code, 'كود الصنف', Icons.qr_code, readOnly: true)),
+              Expanded(child: _field(_code, 'item_code'.tr(), Icons.qr_code, readOnly: true)),
               const SizedBox(width: 10),
-              Expanded(flex: 2, child: _field(_name, 'اسم الصنف *', Icons.inventory_2)),
+              Expanded(flex: 2, child: _field(_name, 'item_name'.tr(), Icons.inventory_2)),
             ]),
             const SizedBox(height: 10),
             Row(children: [
-              Expanded(child: _field(_buyPrice, 'سعر الشراء', Icons.arrow_downward, type: TextInputType.number, onChanged: (_) => _calculateDiscount())),
+              Expanded(child: _field(_buyPrice, 'purchase_price'.tr(), Icons.arrow_downward, type: TextInputType.number, onChanged: (_) => _calculateDiscount())),
               const SizedBox(width: 10),
-              Expanded(child: _field(_sellPrice, 'سعر البيع', Icons.arrow_upward, type: TextInputType.number, onChanged: (_) => _calculateDiscount())),
+              Expanded(child: _field(_sellPrice, 'selling_price'.tr(), Icons.arrow_upward, type: TextInputType.number, onChanged: (_) => _calculateDiscount())),
             ]),
             const SizedBox(height: 16),
             Container(
@@ -288,7 +289,7 @@ class _ProductFormState extends State<_ProductForm> {
                 children: [
                   const Icon(Icons.percent, color: Colors.orange),
                   const SizedBox(width: 12),
-                  const Text('نسبة الخصم التلقائية:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('auto_discount_rate'.tr(), style: TextStyle(fontWeight: FontWeight.bold)),
                   const Spacer(),
                   Text('${_discount.toStringAsFixed(1)}%', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.orange)),
                 ],
@@ -311,7 +312,7 @@ class _ProductFormState extends State<_ProductForm> {
                     discount: _discount,
                   ));
                 },
-                child: const Text('حفظ الصنف', style: TextStyle(color: Colors.white, fontSize: 16)),
+                child: Text('save_item'.tr(), style: TextStyle(color: Colors.white, fontSize: 16)),
               ),
             ),
           ],

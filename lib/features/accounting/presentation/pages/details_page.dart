@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/account.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class DetailsPage extends StatelessWidget {
   final Account account; // استلام كائن الحساب بالكامل
@@ -20,9 +21,9 @@ class DetailsPage extends StatelessWidget {
             // عرض رصيد الحساب الحقيقي من قاعدة البيانات
             _buildRealSummaryCard(account),
             const SizedBox(height: 20),
-            _buildInfoTile("كود الحساب", account.code),
+            _buildInfoTile("account_code".tr(), account.code),
             const SizedBox(height: 20),
-            const Text("الحركات الأخيرة", style: TextStyle(fontWeight: FontWeight.bold)),
+            Text("recent_transactions".tr(), style: TextStyle(fontWeight: FontWeight.bold)),
             // هنا سنعرض العمليات المرتبطة بهذا الحساب لاحقاً
           ],
         ),
@@ -37,7 +38,7 @@ class DetailsPage extends StatelessWidget {
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            const Text("الرصيد الحالي"),
+            Text("current_balance".tr()),
             Text(
               "${account.balance.toStringAsFixed(2)} ج.م",
               style: TextStyle(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_acc/features/accounting/domain/entities/account.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class AccountListTile extends StatelessWidget {
   final Account account;
@@ -82,7 +83,7 @@ class AccountListTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  isDebit ? 'مدين' : 'دائن',
+                  isDebit ? 'debit'.tr() : 'credit'.tr(),
                   style: TextStyle(
                     color: balanceColor,
                     fontSize: 9,
